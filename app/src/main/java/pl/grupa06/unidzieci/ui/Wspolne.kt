@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import pl.grupa06.unidzieci.logika.dataDluga
 import pl.grupa06.unidzieci.model.TypWydarzenia
 import pl.grupa06.unidzieci.model.Wydarzenie
 import pl.grupa06.unidzieci.ui.theme.kolorTypu
@@ -35,6 +34,20 @@ fun EtykietaTypu(typ: TypWydarzenia, modifier: Modifier = Modifier) {
     )
 }
 
+// dla danych, których nie ma na stronie organizatora
+@Composable
+fun DoPotwierdzenia(modifier: Modifier = Modifier) {
+    Text(
+        text = "Do potwierdzenia z organizatorem",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
 // otwieranie innych aplikacji (nie wymaga uprawnień)
 
 private fun uruchom(context: Context, intent: Intent, bladTekst: String) {
@@ -45,9 +58,14 @@ private fun uruchom(context: Context, intent: Intent, bladTekst: String) {
     }
 }
 
-fun otworzNawigacje(context: Context, lat: Double, lng: Double, etykieta: String) {
-    val uri = Uri.parse("geo:0,0?q=$lat,$lng(${Uri.encode(etykieta)})")
+// szukamy po adresie, mapy same znajdą budynek
+fun otworzNawigacje(context: Context, adres: String) {
+    val uri = Uri.parse("geo:0,0?q=${Uri.encode("$adres, Łódź")}")
     uruchom(context, Intent(Intent.ACTION_VIEW, uri), "Brak aplikacji z mapami na tym telefonie")
+}
+
+fun zadzwon(context: Context, numer: String) {
+    uruchom(context, Intent(Intent.ACTION_DIAL, Uri.parse("tel:$numer")), "Nie można otworzyć telefonu")
 }
 
 fun otworzLink(context: Context, url: String) {
@@ -60,8 +78,8 @@ fun dodajDoKalendarza(context: Context, w: Wydarzenie) {
     val intent = Intent(Intent.ACTION_INSERT)
         .setData(CalendarContract.Events.CONTENT_URI)
         .putExtra(CalendarContract.Events.TITLE, "${w.typ.etykieta}: ${w.tytul}")
-        .putExtra(CalendarContract.Events.EVENT_LOCATION, "${w.budynek}, ${w.sala}, ${w.adres}")
-        .putExtra(CalendarContract.Events.DESCRIPTION, "Rejestracja 30 min przed zajęciami. ${dataDluga(w.data)}.")
+        .putExtra(CalendarContract.Events.EVENT_LOCATION, listOfNotNull(w.sala, w.budynek, w.adres).joinToString(", "))
+        .putExtra(CalendarContract.Events.DESCRIPTION, "Łódzki Uniwersytet Dziecięcy PŁ. Nie zapomnij indeksu!")
         .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, w.data.atTime(w.start).atZone(strefa).toInstant().toEpochMilli())
         .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, w.data.atTime(w.koniec).atZone(strefa).toInstant().toEpochMilli())
     uruchom(context, intent, "Brak aplikacji kalendarza na tym telefonie")

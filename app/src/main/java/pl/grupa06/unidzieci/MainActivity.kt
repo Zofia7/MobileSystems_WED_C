@@ -1,5 +1,6 @@
 package pl.grupa06.unidzieci
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,13 +21,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import pl.grupa06.unidzieci.data.PamiecLokalna
 import pl.grupa06.unidzieci.data.SampleData
 import pl.grupa06.unidzieci.ui.kalendarz.KalendarzScreen
 import pl.grupa06.unidzieci.ui.namiejscu.NaMiejscuScreen
@@ -47,20 +53,30 @@ class MainActivity : ComponentActivity() {
 
 private object Trasy {
     const val KALENDARZ = "kalendarz"
-    const val NA_MIEJSCU = "na_miejscu"
+    const val NA_MIEJSCU = "na_miejscu?budynek={budynek}"
     const val SZCZEGOLY = "szczegoly/{id}"
     fun szczegoly(id: String) = "szczegoly/$id"
+    fun naMiejscu(budynek: String? = null) =
+        if (budynek == null) "na_miejscu" else "na_miejscu?budynek=${Uri.encode(budynek)}"
 }
 
-private data class ZakladkaDolna(val trasa: String, val etykieta: String, val ikona: ImageVector, val ikonaWybrana: ImageVector)
+private data class ZakladkaDolna(
+    val trasa: String,
+    val cel: String,
+    val etykieta: String,
+    val ikona: ImageVector,
+    val ikonaWybrana: ImageVector,
+)
 
 private val ZAKLADKI = listOf(
-    ZakladkaDolna(Trasy.KALENDARZ, "Kalendarz", Icons.Outlined.CalendarMonth, Icons.Filled.CalendarMonth),
-    ZakladkaDolna(Trasy.NA_MIEJSCU, "Na miejscu", Icons.Outlined.Place, Icons.Filled.Place),
+    ZakladkaDolna(Trasy.KALENDARZ, Trasy.KALENDARZ, "Kalendarz", Icons.Outlined.CalendarMonth, Icons.Filled.CalendarMonth),
+    ZakladkaDolna(Trasy.NA_MIEJSCU, Trasy.naMiejscu(), "Na miejscu", Icons.Outlined.Place, Icons.Filled.Place),
 )
 
 @Composable
 fun UniDzieciApp() {
+    val context = LocalContext.current
+    val pamiec = remember { PamiecLokalna(context.applicationContext) }
     val nav = rememberNavController()
     val wpis by nav.currentBackStackEntryAsState()
     val obecnaTrasa = wpis?.destination?.route
@@ -77,7 +93,7 @@ fun UniDzieciApp() {
                         NavigationBarItem(
                             selected = wybrana,
                             onClick = {
-                                nav.navigate(z.trasa) {
+                                nav.navigate(z.cel) {
                                     popUpTo(nav.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
@@ -98,13 +114,23 @@ fun UniDzieciApp() {
             composable(Trasy.KALENDARZ) {
                 KalendarzScreen(
                     wydarzenia = SampleData.wydarzenia,
+                    przypomnienia = pamiec.przypomnienia,
+                    dodaneDoKalendarza = pamiec.dodaneDoKalendarza,
+                    onDodanoDoKalendarza = { pamiec.zapiszDodane(it) },
                     onWydarzenieClick = { id -> nav.navigate(Trasy.szczegoly(id)) },
                 )
             }
-            composable(Trasy.NA_MIEJSCU) {
+            composable(
+                Trasy.NA_MIEJSCU,
+                arguments = listOf(navArgument("budynek") {
+                    type = NavType.StringType
+                    nullable = true
+                }),
+            ) { wpisNaMiejscu ->
                 NaMiejscuScreen(
                     wydarzenia = SampleData.wydarzenia,
                     miejsca = SampleData.miejsca,
+                    poczatkowyBudynek = wpisNaMiejscu.arguments?.getString("budynek"),
                     onWydarzenieClick = { id -> nav.navigate(Trasy.szczegoly(id)) },
                 )
             }
@@ -112,7 +138,13 @@ fun UniDzieciApp() {
                 val id = wpisSzczegolow.arguments?.getString("id")
                 val wydarzenie = SampleData.wydarzenia.find { it.id == id }
                 if (wydarzenie != null) {
-                    SzczegolyScreen(wydarzenie, onWstecz = { nav.popBackStack() })
+                    SzczegolyScreen(
+                        w = wydarzenie,
+                        przypomnienieUstawione = wydarzenie.id in pamiec.przypomnienia,
+                        onPrzelaczPrzypomnienie = { pamiec.przelaczPrzypomnienie(wydarzenie.id) },
+                        onNaMiejscu = { budynek -> nav.navigate(Trasy.naMiejscu(budynek)) },
+                        onWstecz = { nav.popBackStack() },
+                    )
                 } else {
                     Text("Nie znaleziono zajęć")
                 }

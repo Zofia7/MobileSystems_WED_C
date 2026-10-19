@@ -1,6 +1,8 @@
 package pl.grupa06.unidzieci.logika
 
+import pl.grupa06.unidzieci.model.TypWydarzenia
 import pl.grupa06.unidzieci.model.Wydarzenie
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -65,3 +67,33 @@ fun statusZapisow(w: Wydarzenie, dzis: LocalDate): StatusZapisow = when {
 const val MINUTY_NA_REJESTRACJE = 30L
 
 fun godzinaZbiorki(w: Wydarzenie): LocalTime = w.start.minusMinutes(MINUTY_NA_REJESTRACJE)
+
+// wykłady mają dwie grupy (gr. II później), zajęcia trwają tyle samo
+enum class Grupa(val etykieta: String) { I("Grupa I"), II("Grupa II") }
+
+fun godzinyGrupy(w: Wydarzenie, grupa: Grupa): Pair<LocalTime, LocalTime> {
+    val start = if (grupa == Grupa.II && w.startGrupaII != null) w.startGrupaII else w.start
+    val czas = Duration.between(w.start, w.koniec)
+    return start to start.plus(czas)
+}
+
+data class Lokalizacja(val budynek: String, val adres: String)
+
+// budynki, w których są zajęcia - najpierw te z najbliższymi zajęciami
+fun budynkiZajec(wydarzenia: List<Wydarzenie>, dzis: LocalDate): List<Lokalizacja> {
+    val (przyszle, przeszle) = wydarzenia.sortedWith(compareBy({ it.data }, { it.start }))
+        .partition { !it.data.isBefore(dzis) }
+    return (przyszle + przeszle).map { Lokalizacja(it.budynek, it.adres) }.distinct()
+}
+
+// które zajęcia dodać do kalendarza w telefonie (bez minionych i bez już dodanych)
+fun doImportu(
+    wydarzenia: List<Wydarzenie>,
+    dzis: LocalDate,
+    zWarsztatami: Boolean,
+    juzDodane: Set<String>,
+): List<Wydarzenie> = wydarzenia.filter {
+    !it.data.isBefore(dzis) &&
+        it.id !in juzDodane &&
+        (zWarsztatami || it.typ == TypWydarzenia.WYKLAD)
+}

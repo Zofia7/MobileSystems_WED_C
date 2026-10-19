@@ -3,11 +3,15 @@ package pl.grupa06.unidzieci
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import pl.grupa06.unidzieci.logika.Grupa
 import pl.grupa06.unidzieci.logika.StatusZapisow
+import pl.grupa06.unidzieci.logika.budynkiZajec
 import pl.grupa06.unidzieci.logika.chipyDnia
 import pl.grupa06.unidzieci.logika.dataDluga
+import pl.grupa06.unidzieci.logika.doImportu
 import pl.grupa06.unidzieci.logika.domyslnieWybranyDzien
 import pl.grupa06.unidzieci.logika.godzinaZbiorki
+import pl.grupa06.unidzieci.logika.godzinyGrupy
 import pl.grupa06.unidzieci.logika.grupujPoDniach
 import pl.grupa06.unidzieci.logika.liczbaZajec
 import pl.grupa06.unidzieci.logika.najblizszyDzienZZajeciami
@@ -28,10 +32,12 @@ class KalendarzLogikaTest {
         id: String, data: LocalDate, start: LocalTime = LocalTime.of(10, 0),
         typ: TypWydarzenia = TypWydarzenia.WYKLAD,
         link: String? = null, termin: LocalDate? = null, wolne: Int? = null,
+        grupaII: LocalTime? = null, budynek: String = "B",
     ) = Wydarzenie(
         id = id, tytul = "Tytuł $id", typ = typ, data = data, start = start, koniec = start.plusHours(1),
-        budynek = "B", sala = "S", adres = "A", krokiDojscia = emptyList(), opis = "", prowadzacy = "",
-        grupaWiekowa = "", linkZapisy = link, terminZapisow = termin, wolneMiejsca = wolne, lat = null, lng = null,
+        startGrupaII = grupaII, budynek = budynek, sala = "S", adres = "A", miejscePotwierdzone = true,
+        krokiDojscia = emptyList(), opis = "", prowadzacy = null, grupaWiekowa = "", oplata = null,
+        linkZapisy = link, terminZapisow = termin, wolneMiejsca = wolne,
     )
 
     @Test
@@ -105,5 +111,42 @@ class KalendarzLogikaTest {
     @Test
     fun zbiorka_30minutPrzedZajeciami() {
         assertEquals(LocalTime.of(9, 30), godzinaZbiorki(w("a", sob24, LocalTime.of(10, 0))))
+    }
+
+    @Test
+    fun godzinyGrupy_drugaGrupaPozniejTenSamCzas() {
+        val wyklad = w("a", sob24, LocalTime.of(10, 0), grupaII = LocalTime.of(12, 0))
+        assertEquals(LocalTime.of(10, 0) to LocalTime.of(11, 0), godzinyGrupy(wyklad, Grupa.I))
+        assertEquals(LocalTime.of(12, 0) to LocalTime.of(13, 0), godzinyGrupy(wyklad, Grupa.II))
+
+        // warsztat nie ma drugiej grupy, więc zawsze godzina podstawowa
+        val warsztat = w("b", sob24, LocalTime.of(16, 30), typ = TypWydarzenia.WARSZTAT)
+        assertEquals(LocalTime.of(16, 30), godzinyGrupy(warsztat, Grupa.II).first)
+    }
+
+    @Test
+    fun budynki_najpierwNajblizszeZajecia_bezPowtorzen() {
+        val dzis = LocalDate.of(2026, 10, 19)
+        val lista = listOf(
+            w("stare", LocalDate.of(2026, 10, 1), budynek = "Stary"),
+            w("b", sob31, budynek = "B9"),
+            w("a", sob24, budynek = "EEIA"),
+            w("c", LocalDate.of(2026, 11, 7), budynek = "B9"),
+        )
+        assertEquals(listOf("EEIA", "B9", "Stary"), budynkiZajec(lista, dzis).map { it.budynek })
+    }
+
+    @Test
+    fun import_pomijaMinioneDodaneIWarsztaty() {
+        val dzis = LocalDate.of(2026, 10, 19)
+        val lista = listOf(
+            w("minione", LocalDate.of(2026, 10, 17)),
+            w("dodane", sob24),
+            w("wyklad", sob31),
+            w("warsztat", sob31, typ = TypWydarzenia.WARSZTAT),
+        )
+        val juzDodane = setOf("dodane")
+        assertEquals(listOf("wyklad"), doImportu(lista, dzis, zWarsztatami = false, juzDodane).map { it.id })
+        assertEquals(listOf("wyklad", "warsztat"), doImportu(lista, dzis, zWarsztatami = true, juzDodane).map { it.id })
     }
 }

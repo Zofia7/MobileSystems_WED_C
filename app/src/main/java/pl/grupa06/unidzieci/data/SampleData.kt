@@ -3,171 +3,130 @@ package pl.grupa06.unidzieci.data
 import pl.grupa06.unidzieci.model.KategoriaMiejsca
 import pl.grupa06.unidzieci.model.Miejsce
 import pl.grupa06.unidzieci.model.TypWydarzenia
-import pl.grupa06.unidzieci.model.TypWydarzenia.WARSZTAT
-import pl.grupa06.unidzieci.model.TypWydarzenia.WYKLAD
 import pl.grupa06.unidzieci.model.Wydarzenie
 import java.time.LocalDate
 import java.time.LocalTime
 
-// przykładowe dane do prototypu, docelowo będą pobierane z arkusza (CSV)
+// Dane Łódzkiego Uniwersytetu Dziecięcego PŁ, semestr zimowy 2026 (źródło: lud.p.lodz.pl, październik 2026).
+// Wykłady (daty, tytuły, prowadzący, godziny) są prawdziwe. Sala wykładów nie jest podana na stronie,
+// aula im. Krysickiego to trop z relacji z 2020 r. Tytuły warsztatów, wiek i czas trwania są prawdziwe,
+// ale ich daty i sale wymyśliliśmy (organizator podaje je mailem). Docelowo dane będą z arkusza (CSV).
 object SampleData {
 
-    const val LINK_ZAPISOW = "https://www.p.lodz.pl/"
+    const val LINK_ZAPISOW = "https://lud-rekrutacja.p.lodz.pl/"
+    private val TERMIN_ZAPISOW = LocalDate.of(2026, 9, 3)
 
-    // budynki osobno, żeby nie powtarzać adresu i dojścia przy każdym wydarzeniu
+    private class Budynek(val nazwa: String, val adres: String, val wejscie: String)
 
-    private class Budynek(
-        val nazwa: String,
-        val adres: String,
-        val lat: Double,
-        val lng: Double,
-        val wejscie: String,
-    )
-
-    private val CTI = Budynek(
-        nazwa = "Budynek CTI",
-        adres = "ul. Wólczańska 215",
-        lat = 51.7470, lng = 19.4556,
-        wejscie = "Wejdź głównym wejściem od ul. Wólczańskiej (szklane drzwi pod daszkiem).",
+    private val B9 = Budynek(
+        "Gmach Trzech Wydziałów (B9)", "ul. Wólczańska 215",
+        "Wejdź głównym wejściem budynku B9 od ul. Wólczańskiej.",
     )
     private val CHEMIA = Budynek(
-        nazwa = "Budynek Chemii",
-        adres = "ul. Żeromskiego 116",
-        lat = 51.7531, lng = 19.4527,
-        wejscie = "Wejście od dziedzińca, bramą od ul. Żeromskiego, potem w prawo.",
+        "Wydział Chemiczny", "ul. Żeromskiego 116",
+        "Wejście główne wydziału od ul. Żeromskiego.",
     )
-    private val HALA = Budynek(
-        nazwa = "Hala Laboratoryjna",
-        adres = "ul. Stefanowskiego 1/15",
-        lat = 51.7493, lng = 19.4520,
-        wejscie = "Wejście boczne od parkingu, oznaczone tabliczką uniwersytetu dziecięcego.",
+    private val EEIA = Budynek(
+        "Wydział EEIA", "ul. Stefanowskiego 18",
+        "Wejście główne od ul. Stefanowskiego.",
+    )
+    private val MECHANICZNY = Budynek(
+        "Wydział Mechaniczny", "ul. Stefanowskiego 1/15",
+        "Wejście główne od ul. Stefanowskiego.",
+    )
+    private val ARCHITEKTURA = Budynek(
+        "Wydział BAiIŚ", "al. Politechniki 6",
+        "Wejście główne od al. Politechniki.",
+    )
+    private val LICEUM = Budynek(
+        "Publiczne Liceum Ogólnokształcące PŁ", "Łódź",
+        "Wejście do liceum, pracownia Newton Room.",
     )
 
-    private fun sob(miesiac: Int, dzien: Int) = LocalDate.of(2026, miesiac, dzien)
-    private fun g(h: Int, m: Int = 0) = LocalTime.of(h, m)
+    private fun d(miesiac: Int, dzien: Int) = LocalDate.of(2026, miesiac, dzien)
 
-    private fun wydarzenie(
-        id: String, tytul: String, typ: TypWydarzenia,
-        data: LocalDate, start: LocalTime, koniec: LocalTime,
-        b: Budynek, sala: String, dalszeKroki: List<String>,
-        opis: String, prowadzacy: String, grupaWiekowa: String,
-        terminZapisow: LocalDate?, wolneMiejsca: Int?,
+    private fun wyklad(
+        id: String, tytul: String, data: LocalDate, grupaII: LocalTime,
+        prowadzacy: String, opis: String,
     ) = Wydarzenie(
-        id = id, tytul = tytul, typ = typ, data = data, start = start, koniec = koniec,
-        budynek = b.nazwa, sala = sala, adres = b.adres,
-        krokiDojscia = listOf(b.wejscie, "Zarejestruj dziecko przy stoliku w holu.") + dalszeKroki,
-        opis = opis, prowadzacy = prowadzacy, grupaWiekowa = grupaWiekowa,
-        // wykłady bez zapisów, warsztaty z zapisami
-        linkZapisy = if (terminZapisow != null) LINK_ZAPISOW else null,
-        terminZapisow = terminZapisow, wolneMiejsca = wolneMiejsca,
-        lat = b.lat, lng = b.lng,
+        id = id, tytul = tytul, typ = TypWydarzenia.WYKLAD, data = data,
+        start = LocalTime.of(10, 0), koniec = LocalTime.of(11, 0), startGrupaII = grupaII,
+        budynek = B9.nazwa, sala = "Aula im. prof. W. Krysickiego", adres = B9.adres,
+        miejscePotwierdzone = false,
+        krokiDojscia = listOf(
+            B9.wejscie,
+            "Kieruj się oznaczeniami ŁUD do auli.",
+            "Rodzice mogą oglądać wykład na transmisji w salach obok auli.",
+        ),
+        opis = (if (opis.isEmpty()) "" else "$opis ") + "Wykład trwa 45 minut, potem 15 minut na pytania do wykładowcy. " +
+            "Wykład jest też transmitowany przez internet.",
+        prowadzacy = prowadzacy, grupaWiekowa = "8-12 lat", oplata = "w ramach wpisowego (50 zł)",
+        linkZapisy = LINK_ZAPISOW, terminZapisow = TERMIN_ZAPISOW, wolneMiejsca = null,
     )
 
-    private val AULA_CTI = listOf("Aula 1 jest na parterze, na wprost wejścia, za szatnią.")
-    private val SALA_CTI_2 = listOf("Schodami albo windą na 2. piętro.", "Sala 204 to trzecie drzwi po lewej.")
-    private val SALA_CHEMIA = listOf("Schodami na 1. piętro.", "Laboratorium jest na końcu korytarza, drzwi z oknem.")
-    private val SALA_HALA = listOf("Prosto korytarzem do końca.", "Pracownia jest po prawej, za żółtą linią na podłodze.")
+    private fun warsztat(
+        id: String, tytul: String, dziedzina: String, data: LocalDate,
+        minuty: Long, wiek: String, b: Budynek, potwierdzone: Boolean = false,
+    ) = Wydarzenie(
+        id = id, tytul = tytul, typ = TypWydarzenia.WARSZTAT, data = data,
+        start = LocalTime.of(16, 30), koniec = LocalTime.of(16, 30).plusMinutes(minuty), startGrupaII = null,
+        budynek = b.nazwa, sala = null, adres = b.adres,
+        miejscePotwierdzone = potwierdzone,
+        krokiDojscia = listOf(b.wejscie, "Numer sali jest w mailu z potwierdzeniem warsztatu."),
+        opis = "Warsztat z dziedziny: $dziedzina. Czas trwania: $minuty min. " +
+            "Dziecko wybiera 6 warsztatów w semestrze, każdy to jedno spotkanie.",
+        prowadzacy = null, grupaWiekowa = wiek, oplata = "30 zł",
+        linkZapisy = LINK_ZAPISOW, terminZapisow = TERMIN_ZAPISOW, wolneMiejsca = null,
+    )
 
     val wydarzenia: List<Wydarzenie> = listOf(
-        // październik
-        wydarzenie("w01", "Skąd się biorą wulkany?", WYKLAD, sob(10, 3), g(10), g(11),
-            CTI, "Aula 1", AULA_CTI,
-            "Dlaczego Ziemia czasem wybucha i czy w Polsce były kiedyś wulkany? Pokaz z modelem erupcji.",
-            "dr Marta Zielińska", "7-12 lat", null, null),
-        wydarzenie("w02", "Robotyka z klocków", WARSZTAT, sob(10, 3), g(11, 30), g(13),
-            CTI, "Sala 204", SALA_CTI_2,
-            "Dzieci w parach budują prostego robota i programują jego ruch na tablecie.",
-            "mgr inż. Piotr Nowicki", "8-10 lat", sob(9, 30), 0),
-        wydarzenie("w03", "Dlaczego most się nie zawala?", WYKLAD, sob(10, 10), g(10), g(11),
-            CTI, "Aula 1", AULA_CTI,
-            "O siłach, które działają na mosty i wieżowce. Na koniec konkurs na najmocniejszy most z papieru.",
-            "dr inż. Tomasz Lis", "7-12 lat", null, null),
-        wydarzenie("w04", "Chemia w kuchni", WARSZTAT, sob(10, 10), g(11, 30), g(13),
-            CHEMIA, "Laboratorium 112", SALA_CHEMIA,
-            "Czerwona kapusta jako wskaźnik pH, piana z drożdży i inne bezpieczne doświadczenia.",
-            "dr Agnieszka Wróbel", "9-12 lat", sob(10, 7), 0),
-        wydarzenie("w05", "Jak działa internet?", WYKLAD, sob(10, 17), g(10), g(11),
-            CTI, "Aula 1", AULA_CTI,
-            "Jak wiadomość z telefonu babci trafia na drugi koniec świata? Kable, światło i paczki danych.",
-            "dr inż. Paweł Majewski", "8-12 lat", null, null),
-        wydarzenie("w06", "Tajemnice papieru", WYKLAD, sob(10, 24), g(10), g(11),
-            CTI, "Aula 1", AULA_CTI,
-            "Z czego robi się papier i dlaczego banknotu nie da się łatwo podrobić? Każdy dostanie próbki.",
-            "dr inż. Katarzyna Pawlak", "7-12 lat", null, null),
-        wydarzenie("w07", "Rakiety na wodę", WARSZTAT, sob(10, 24), g(11, 30), g(13),
-            HALA, "Pracownia 3", SALA_HALA,
-            "Budujemy rakiety z butelek i sprawdzamy, która poleci najwyżej. Prosimy o strój, który może się zmoczyć.",
-            "mgr inż. Michał Wójcik", "9-12 lat", sob(10, 21), 4),
-        // listopad
-        wydarzenie("w08", "Światło i kolory", WYKLAD, sob(11, 7), g(10), g(11),
-            CTI, "Aula 1", AULA_CTI,
-            "Dlaczego niebo jest niebieskie, a zachód słońca czerwony? Pokazy z laserem i pryzmatem.",
-            "dr Ewa Szymańska", "7-12 lat", null, null),
-        wydarzenie("w09", "Drukarka 3D od środka", WARSZTAT, sob(11, 7), g(11, 30), g(13),
-            CTI, "Sala 204", SALA_CTI_2,
-            "Projektujemy breloczek na komputerze i patrzymy, jak drukarka 3D go drukuje warstwa po warstwie.",
-            "mgr inż. Piotr Nowicki", "10-12 lat", sob(11, 4), 7),
-        wydarzenie("w10", "Programujemy grę w Scratchu", WARSZTAT, sob(11, 7), g(11, 30), g(13),
-            CTI, "Sala 207", listOf("Schodami albo windą na 2. piętro.", "Sala 207 jest na końcu korytarza."),
-            "Pierwsza własna gra: kot zbiera jabłka i ucieka przed psem. Bez wcześniejszego doświadczenia.",
-            "mgr Joanna Kamińska", "7-9 lat", sob(11, 4), 12),
-        wydarzenie("w11", "Ubrania przyszłości", WYKLAD, sob(11, 14), g(10), g(11),
-            CTI, "Aula 1", AULA_CTI,
-            "Kurtki, które grzeją same, i koszulki, które mierzą puls. Z czego robi się mądre tkaniny?",
-            "dr inż. Anna Kowalczyk", "8-12 lat", null, null),
-        wydarzenie("w12", "Dzień otwartych laboratoriów", WYKLAD, LocalDate.of(2026, 11, 18), g(16, 30), g(18),
-            HALA, "Hol główny", listOf("Zbiórka grup w holu, przewodnicy oprowadzają co 20 minut."),
-            "Popołudnie dla całych rodzin: krótkie pokazy w kilku laboratoriach. Można przyjść z rodzeństwem.",
-            "Zespół Uniwersytetu Dziecięcego", "każdy wiek", null, null),
-        wydarzenie("w13", "Elektryczność bez strachu", WYKLAD, sob(11, 21), g(10), g(11),
-            CTI, "Aula 1", AULA_CTI,
-            "Skąd prąd bierze się w gniazdku i dlaczego nie wolno do niego niczego wkładać? Pokaz z cewką Tesli.",
-            "dr inż. Tomasz Lis", "7-12 lat", null, null),
-        wydarzenie("w14", "Obwody z plasteliny", WARSZTAT, sob(11, 21), g(11, 30), g(13),
-            HALA, "Pracownia 3", SALA_HALA,
-            "Z przewodzącej plasteliny i diod LED dzieci lepią świecące stworki.",
-            "mgr inż. Michał Wójcik", "7-9 lat", sob(11, 18), 9),
-        wydarzenie("w15", "Czy roboty mają uczucia?", WYKLAD, sob(11, 28), g(10), g(11),
-            CTI, "Aula 1", AULA_CTI,
-            "Rozmowa o sztucznej inteligencji: co komputer naprawdę rozumie, a czego tylko udaje.",
-            "dr inż. Paweł Majewski", "9-12 lat", null, null),
-        // grudzień
-        wydarzenie("w16", "Lód, para i ciekły azot", WYKLAD, sob(12, 5), g(10), g(11),
-            CHEMIA, "Aula Chemii", listOf("Aula jest na parterze, pierwsze drzwi po lewej."),
-            "Co się dzieje z kwiatem w temperaturze -196°C? Będzie dużo dymu.",
-            "dr Agnieszka Wróbel", "7-12 lat", null, null),
-        wydarzenie("w17", "Pierniki pod mikroskopem", WARSZTAT, sob(12, 5), g(11, 30), g(13),
-            CHEMIA, "Laboratorium 112", SALA_CHEMIA,
-            "Oglądamy mąkę, cukier i przyprawy pod mikroskopem, a potem dekorujemy pierniki.",
-            "dr Ewa Szymańska", "7-10 lat", sob(12, 2), 15),
-        wydarzenie("w18", "Świąteczne lampki z Arduino", WARSZTAT, sob(12, 12), g(10), g(12),
-            CTI, "Sala 204", SALA_CTI_2,
-            "Programujemy pasek LED, który miga w rytm kolęd. Lampki dzieci zabierają do domu.",
-            "mgr inż. Piotr Nowicki", "10-12 lat", sob(12, 9), 2),
+        // wykłady - dane ze strony ŁUD
+        wyklad("w1", "Czy owady mogą zemdleć?", d(9, 19), LocalTime.of(13, 0),
+            "dr hab. Krzysztof Pabis, prof. UŁ",
+            "Temat zaproponowany przez uczestnika ŁUD. Inauguracja semestru z udziałem JM Rektora PŁ i wręczenie indeksów."),
+        wyklad("w2", "Lekcja Różnorodności: jak wygląda świat w spektrum autyzmu?", d(9, 26), LocalTime.of(12, 0),
+            "Jan Gawroński, Sylwia Kowalska", ""),
+        wyklad("w3", "Kiedy umarło Morze Martwe?", d(10, 17), LocalTime.of(12, 0),
+            "Piotr Malesa, Łukasz Pastusiak",
+            "Temat zaproponowany przez uczestnika ŁUD. Prowadzą nauczyciele geografii z Liceum PŁ."),
+        wyklad("w4", "Czy robot może ukraść mój rysunek? O sztucznej inteligencji, pomysłach i prawie autorskim",
+            d(11, 21), LocalTime.of(12, 0), "dr inż. Maria Woźniak-Malczewska", ""),
+        wyklad("w5", "Gdzie mieszka energia? Od telefonu w kieszeni do baz w Kosmosie", d(12, 12), LocalTime.of(13, 0),
+            "dr inż. Michał Lipian", "Ostatni wykład semestru."),
+
+        // warsztaty - tytuły ze strony ŁUD, terminy i sale przykładowe
+        warsztat("a1", "Na tropie pierwiastków chemicznych", "chemia", d(10, 6), 45, "8-9 lat", CHEMIA),
+        warsztat("a2", "Jak powstaje tkanina?", "włókiennictwo", d(10, 8), 45, "8-12 lat", B9),
+        warsztat("a3", "Gry logiczne - sztuka kombinowania czy matematyka?", "matematyka", d(10, 14), 45, "8-12 lat", B9),
+        warsztat("a4", "Sumo - walki robotów", "robotyka", d(10, 21), 90, "8-9 lat", EEIA),
+        warsztat("a5", "Co wyobraźnia zmaluje, długopis wydrukuje", "druk 3D", d(10, 22), 45, "8-9 lat", MECHANICZNY),
+        warsztat("a6", "I Ty możesz pilotować samolot!", "lotnictwo", d(10, 29), 90, "12 lat", LICEUM, potwierdzone = true),
+        warsztat("a7", "Jak namówić pociąg, żeby latał?", "elektromagnetyzm", d(11, 4), 45, "8-12 lat", EEIA),
+        warsztat("a8", "Ile oczu ma mucha? - czyli podróż w głąb mikroświata", "inżynieria materiałowa", d(11, 5), 50, "10-12 lat", MECHANICZNY),
+        warsztat("a9", "Totolotek", "matematyka", d(11, 12), 45, "10-12 lat", B9),
+        warsztat("a10", "Sieć o bardzo drobnych oczkach", "chemia", d(11, 18), 50, "8-12 lat", CHEMIA),
+        warsztat("a11", "Opakować przestrzeń - architektura Twojego domu", "architektura", d(11, 24), 90, "8-9 lat", ARCHITEKTURA),
+        warsztat("a12", "C++ na gąsienicach - programujemy Pololu", "robotyka", d(11, 26), 90, "12 lat", EEIA),
+        warsztat("a13", "Mikro i makroświat", "optyka", d(12, 2), 45, "8-9 lat", B9),
+        warsztat("a14", "Druk 3D w sosie własnym", "druk 3D", d(12, 3), 45, "10-12 lat", MECHANICZNY),
     )
 
-    // ekran "Na miejscu" (budynek CTI)
     val miejsca: List<Miejsce> = listOf(
-        Miejsce("m1", KategoriaMiejsca.WEJSCIE, "Wejście i rejestracja",
-            "Główne wejście od ul. Wólczańskiej. Stolik rejestracji jest w holu po lewej. " +
-                "Dziecko zgłasza się 30 minut przed zajęciami.",
-            "w dni zajęć od 9:15", 51.7470, 19.4556),
-        Miejsce("m2", KategoriaMiejsca.PARKING, "Parking przy budynku",
-            "Wjazd od ul. Wólczańskiej, ok. 40 miejsc. W soboty zwykle wolne miejsca do 9:45, później " +
-                "szybko się zapełnia. Miejsca dla osób z niepełnosprawnością przy samym wejściu.",
-            null, 51.7466, 19.4549),
+        Miejsce("m1", KategoriaMiejsca.TRANSMISJA, "Transmisja dla rodziców",
+            "W trakcie wykładu rodzice mogą oglądać transmisję w salach obok auli. " +
+                "Wykład jest też dostępny przez internet.",
+            "w trakcie wykładów", B9.nazwa, null, null, potwierdzone = true),
+        Miejsce("m2", KategoriaMiejsca.PARKING, "Parking",
+            "Parking uczelniany przy budynku. Zasady wjazdu w soboty trzeba potwierdzić z organizatorem.",
+            null, B9.nazwa, B9.adres, null, potwierdzone = false),
         Miejsce("m3", KategoriaMiejsca.SZATNIA, "Szatnia",
-            "Parter, za holem. Kurtkę dziecka oddaje rodzic, numerek zostaje u rodzica.",
-            "sob. 9:15-13:30", null, null),
-        Miejsce("m4", KategoriaMiejsca.BUFET, "Kawiarnia na 1. piętrze",
-            "Kawa, herbata, kanapki, soki. Jest kącik ze stolikami, gdzie można poczekać.",
-            "sob. 9:00-13:00", null, null),
-        Miejsce("m5", KategoriaMiejsca.POCZEKALNIA, "Poczekalnia dla rodziców",
-            "Sala 015 na parterze: krzesła, gniazdka, Wi-Fi dla gości (hasło przy rejestracji). " +
-                "Młodsze rodzeństwo mile widziane.",
-            "w trakcie zajęć", null, null),
-        Miejsce("m6", KategoriaMiejsca.TOALETY, "Toalety",
-            "Na każdym piętrze przy klatce schodowej. Przewijak w toalecie na parterze.",
-            null, null, null),
+            "Szatnia w holu budynku. Godziny otwarcia w soboty do potwierdzenia.",
+            null, B9.nazwa, null, null, potwierdzone = false),
+        Miejsce("m4", KategoriaMiejsca.BUFET, "Bufet",
+            "Czy bufet jest otwarty w soboty - do potwierdzenia.",
+            null, B9.nazwa, null, null, potwierdzone = false),
+        Miejsce("m5", KategoriaMiejsca.KONTAKT, "Biuro ŁUD",
+            "Biblioteka Główna PŁ, budynek B22, IV piętro, pok. 418. Pytania o zajęcia, sale i indeksy.",
+            null, null, "Biblioteka Główna Politechniki Łódzkiej, ul. Wólczańska 223", "426312809", potwierdzone = true),
     )
 }

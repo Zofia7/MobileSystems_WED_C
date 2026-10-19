@@ -1,5 +1,9 @@
 package pl.grupa06.unidzieci.ui.kalendarz
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,7 +31,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,6 +44,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,6 +62,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -62,18 +74,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.OutDateStyle
 import kotlinx.coroutines.launch
+import pl.grupa06.unidzieci.data.KalendarzKonta
+import pl.grupa06.unidzieci.data.dodajDoKalendarzaTelefonu
+import pl.grupa06.unidzieci.data.kalendarzeDoZapisu
 import pl.grupa06.unidzieci.logika.chipyDnia
 import pl.grupa06.unidzieci.logika.dataDluga
 import pl.grupa06.unidzieci.logika.domyslnieWybranyDzien
+import pl.grupa06.unidzieci.logika.godzina
 import pl.grupa06.unidzieci.logika.grupujPoDniach
-import pl.grupa06.unidzieci.logika.nazwaMiesiaca
 import pl.grupa06.unidzieci.logika.najblizszyDzienZZajeciami
+import pl.grupa06.unidzieci.logika.nazwaMiesiaca
 import pl.grupa06.unidzieci.logika.opisDniaDlaCzytnika
 import pl.grupa06.unidzieci.logika.przedzialGodzin
 import pl.grupa06.unidzieci.model.Wydarzenie
@@ -88,8 +105,13 @@ private val SKROTY_DNI = listOf("Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd")
 @Composable
 fun KalendarzScreen(
     wydarzenia: List<Wydarzenie>,
+    przypomnienia: Set<String>,
+    dodaneDoKalendarza: Set<String>,
+    onDodanoDoKalendarza: (List<String>) -> Unit,
     onWydarzenieClick: (String) -> Unit,
 ) {
+    val context = LocalContext.current
+    val snackbar = remember { SnackbarHostState() }
     val dzis = remember { LocalDate.now() }
     val poDniach = remember(wydarzenia) { grupujPoDniach(wydarzenia) }
     var wybranyDzien by rememberSaveable { mutableStateOf(domyslnieWybranyDzien(wydarzenia, dzis)) }
@@ -109,8 +131,56 @@ fun KalendarzScreen(
         scope.launch { stan.animateScrollToMonth(YearMonth.from(data)) }
     }
 
+    fun komunikat(tekst: String) {
+        scope.launch { snackbar.showSnackbar(tekst) }
+    }
+
+    // import całego kalendarza: najpierw uprawnienia, potem wybór kalendarza w oknie
+    var menuOtwarte by remember { mutableStateOf(false) }
+    var kalendarze by remember { mutableStateOf<List<KalendarzKonta>>(emptyList()) }
+
+    fun otworzImport() {
+        kalendarze = kalendarzeDoZapisu(context)
+        if (kalendarze.isEmpty()) {
+            komunikat("Brak kalendarza na telefonie. Dodaj konto Google w ustawieniach telefonu.")
+        }
+    }
+
+    val prosbaOUprawnienia = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { wyniki ->
+        if (wyniki.values.all { it }) {
+            otworzImport()
+        } else {
+            komunikat("Bez dostępu do kalendarza możesz dodawać zajęcia pojedynczo, w szczegółach.")
+        }
+    }
+
+    fun naImport() {
+        val maUprawnienia = UPRAWNIENIA_KALENDARZA.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+        if (maUprawnienia) otworzImport() else prosbaOUprawnienia.launch(UPRAWNIENIA_KALENDARZA)
+    }
+
+    if (kalendarze.isNotEmpty()) {
+        DialogImportu(
+            kalendarze = kalendarze,
+            wydarzenia = wydarzenia,
+            juzDodane = dodaneDoKalendarza,
+            onAnuluj = { kalendarze = emptyList() },
+            onDodaj = { kalendarz, grupa, lista ->
+                val dodane = dodajDoKalendarzaTelefonu(context, kalendarz.id, lista, grupa)
+                onDodanoDoKalendarza(dodane)
+                kalendarze = emptyList()
+                komunikat("Dodano do kalendarza: ${dodane.size}")
+            },
+        )
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = {
@@ -127,6 +197,21 @@ fun KalendarzScreen(
                     IconButton(onClick = {
                         scope.launch { stan.animateScrollToMonth(widocznyMiesiac.plusMonths(1)) }
                     }) { Icon(Icons.Filled.ChevronRight, contentDescription = "Następny miesiąc") }
+                    Box {
+                        IconButton(onClick = { menuOtwarte = true }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = "Więcej opcji")
+                        }
+                        DropdownMenu(expanded = menuOtwarte, onDismissRequest = { menuOtwarte = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Dodaj wszystkie zajęcia do kalendarza") },
+                                leadingIcon = { Icon(Icons.Outlined.EditCalendar, contentDescription = null) },
+                                onClick = {
+                                    menuOtwarte = false
+                                    naImport()
+                                },
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
@@ -171,7 +256,7 @@ fun KalendarzScreen(
                 }
             } else {
                 items(listaDnia, key = { it.id }) { w ->
-                    WierszWydarzenia(w, onClick = { onWydarzenieClick(w.id) })
+                    WierszWydarzenia(w, przypomnienie = w.id in przypomnienia, onClick = { onWydarzenieClick(w.id) })
                 }
             }
             item { Spacer(Modifier.height(16.dp)) }
@@ -308,7 +393,7 @@ private fun ChipWydarzenia(w: Wydarzenie, bezTekstu: Boolean, przygaszony: Boole
 }
 
 @Composable
-private fun WierszWydarzenia(w: Wydarzenie, onClick: () -> Unit) {
+private fun WierszWydarzenia(w: Wydarzenie, przypomnienie: Boolean, onClick: () -> Unit) {
     val kolor = kolorTypu(w.typ)
     Surface(
         onClick = onClick,
@@ -333,7 +418,7 @@ private fun WierszWydarzenia(w: Wydarzenie, onClick: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = "${przedzialGodzin(w.start, w.koniec)}  ·  ${w.typ.etykieta.uppercase()}",
+                    text = "${godzinyWiersza(w)}  ·  ${w.typ.etykieta.uppercase()}",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = kolor,
@@ -348,11 +433,21 @@ private fun WierszWydarzenia(w: Wydarzenie, onClick: () -> Unit) {
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        "${w.sala}, ${w.budynek}",
+                        listOfNotNull(w.sala, w.budynek).joinToString(", "),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            if (przypomnienie) {
+                Icon(
+                    Icons.Filled.NotificationsActive,
+                    contentDescription = "Przypomnienie ustawione",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .size(20.dp),
+                )
             }
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -382,3 +477,13 @@ private fun BrakZajec(nastepny: LocalDate?, onPokaz: (LocalDate) -> Unit) {
         }
     }
 }
+
+// wykłady: "10:00 / 12:00" (dwie grupy), warsztaty: "16:30-17:15"
+private fun godzinyWiersza(w: Wydarzenie): String =
+    if (w.startGrupaII != null) "${godzina(w.start)} / ${godzina(w.startGrupaII)}"
+    else przedzialGodzin(w.start, w.koniec)
+
+private val UPRAWNIENIA_KALENDARZA = arrayOf(
+    Manifest.permission.READ_CALENDAR,
+    Manifest.permission.WRITE_CALENDAR,
+)

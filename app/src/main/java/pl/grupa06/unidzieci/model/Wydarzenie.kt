@@ -15,21 +15,22 @@ data class Wydarzenie(
     val data: LocalDate,
     val start: LocalTime,
     val koniec: LocalTime,
+    val startGrupaII: LocalTime?, // wykłady są powtarzane dla drugiej grupy
     val budynek: String,
-    val sala: String,
+    val sala: String?, // null = sala podana w mailu od organizatora
     val adres: String,
+    val miejscePotwierdzone: Boolean,
     val krokiDojscia: List<String>,
     val opis: String,
-    val prowadzacy: String,
+    val prowadzacy: String?,
     val grupaWiekowa: String,
+    val oplata: String?,
     val linkZapisy: String?, // null = wstęp wolny
     val terminZapisow: LocalDate?,
     val wolneMiejsca: Int?,
-    val lat: Double?,
-    val lng: Double?,
 )
 
-enum class KategoriaMiejsca { WEJSCIE, PARKING, SZATNIA, BUFET, POCZEKALNIA, TOALETY }
+enum class KategoriaMiejsca { WEJSCIE, TRANSMISJA, PARKING, SZATNIA, BUFET, KONTAKT }
 
 data class Miejsce(
     val id: String,
@@ -37,6 +38,8 @@ data class Miejsce(
     val nazwa: String,
     val opis: String,
     val godziny: String?,
-    val lat: Double?,
-    val lng: Double?,
+    val budynek: String?, // null = dotyczy wszystkich budynków
+    val adres: String?,   // do przycisku "Prowadź"
+    val telefon: String?,
+    val potwierdzone: Boolean,
 )
