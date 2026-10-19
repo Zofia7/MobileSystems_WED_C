@@ -5,8 +5,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Domyślna czcionka systemowa (Roboto), ale mocniejsze nagłówki i trochę większy tekst główny,
-// bo czytają to rodzice „w biegu”.
 private val bazowa = Typography()
 
 val Typography = Typography(

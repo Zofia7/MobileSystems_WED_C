@@ -22,7 +22,6 @@ import pl.grupa06.unidzieci.model.Wydarzenie
 import pl.grupa06.unidzieci.ui.theme.kolorTypu
 import java.time.ZoneId
 
-/** Mała etykieta „WYKŁAD” / „WARSZTAT” w kolorze typu. */
 @Composable
 fun EtykietaTypu(typ: TypWydarzenia, modifier: Modifier = Modifier) {
     Text(
@@ -36,7 +35,7 @@ fun EtykietaTypu(typ: TypWydarzenia, modifier: Modifier = Modifier) {
     )
 }
 
-// --- Intencje systemowe (otwierają inne aplikacje, nie wymagają uprawnień) ---
+// otwieranie innych aplikacji (nie wymaga uprawnień)
 
 private fun uruchom(context: Context, intent: Intent, bladTekst: String) {
     try {
@@ -46,18 +45,16 @@ private fun uruchom(context: Context, intent: Intent, bladTekst: String) {
     }
 }
 
-/** „Prowadź”: otwiera Mapy Google (lub inną aplikację map) na współrzędnych. */
 fun otworzNawigacje(context: Context, lat: Double, lng: Double, etykieta: String) {
     val uri = Uri.parse("geo:0,0?q=$lat,$lng(${Uri.encode(etykieta)})")
     uruchom(context, Intent(Intent.ACTION_VIEW, uri), "Brak aplikacji z mapami na tym telefonie")
 }
 
-/** Otwiera link (np. formularz zapisów) w przeglądarce. */
 fun otworzLink(context: Context, url: String) {
     uruchom(context, Intent(Intent.ACTION_VIEW, Uri.parse(url)), "Brak przeglądarki na tym telefonie")
 }
 
-/** Otwiera systemowy kalendarz z wypełnionym wydarzeniem – użytkownik sam zatwierdza zapis. */
+// użytkownik sam zatwierdza wydarzenie w swoim kalendarzu
 fun dodajDoKalendarza(context: Context, w: Wydarzenie) {
     val strefa = ZoneId.systemDefault()
     val intent = Intent(Intent.ACTION_INSERT)

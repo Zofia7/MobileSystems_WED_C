@@ -4,28 +4,22 @@ import pl.grupa06.unidzieci.model.Wydarzenie
 import java.time.LocalDate
 import java.time.LocalTime
 
-// Czysta logika bez Androida – łatwo ją testować w JUnit (app/src/test).
-
-/** Wydarzenia pogrupowane po dniach, w każdym dniu posortowane po godzinie rozpoczęcia. */
 fun grupujPoDniach(wydarzenia: List<Wydarzenie>): Map<LocalDate, List<Wydarzenie>> =
     wydarzenia.sortedWith(compareBy({ it.data }, { it.start })).groupBy { it.data }
 
-/** Najbliższy dzień z zajęciami, licząc od dziś (dziś też się liczy). Null, gdy nic już nie ma. */
+// dzisiejszy dzień też się liczy
 fun najblizszyDzienZZajeciami(wydarzenia: List<Wydarzenie>, dzis: LocalDate): LocalDate? =
     wydarzenia.map { it.data }.filter { !it.isBefore(dzis) }.minOrNull()
 
-/** Dzień zaznaczony po otwarciu kalendarza: dziś albo najbliższy dzień z zajęciami. */
 fun domyslnieWybranyDzien(wydarzenia: List<Wydarzenie>, dzis: LocalDate): LocalDate =
     najblizszyDzienZZajeciami(wydarzenia, dzis) ?: dzis
 
-/** Najbliższe zajęcia (pierwsze w najbliższym dniu). */
 fun najblizszeWydarzenie(wydarzenia: List<Wydarzenie>, dzis: LocalDate): Wydarzenie? =
     wydarzenia.filter { !it.data.isBefore(dzis) }
         .minWithOrNull(compareBy({ it.data }, { it.start }))
 
-/** Co pokazać w komórce dnia: kilka chipów i liczbę pozostałych („+N”). */
+// w komórce dnia mieszczą się 2 chipy, reszta jako "+N"
 data class ChipyDnia(val widoczne: List<Wydarzenie>, val ukryte: Int) {
-    /** „+1”, „+2”... albo null, gdy wszystko się mieści. */
     val etykietaReszty: String? get() = if (ukryte > 0) "+$ukryte" else null
 }
 
@@ -35,7 +29,7 @@ fun chipyDnia(wydarzeniaDnia: List<Wydarzenie>, maksChipow: Int = 2): ChipyDnia 
         ukryte = (wydarzeniaDnia.size - maksChipow).coerceAtLeast(0),
     )
 
-/** „jedne zajęcia”, „3 zajęcia”, „5 zajęć”, „22 zajęcia” – polska odmiana. */
+// 1 -> "jedne zajęcia", 2-4 -> "zajęcia" (ale 12-14 -> "zajęć"), reszta -> "zajęć"
 fun liczbaZajec(n: Int): String {
     val jednosci = n % 10
     val dziesiatki = n % 100
@@ -46,7 +40,7 @@ fun liczbaZajec(n: Int): String {
     }
 }
 
-/** Opis komórki dnia dla czytnika ekranu (TalkBack). */
+// tekst czytany przez TalkBack
 fun opisDniaDlaCzytnika(data: LocalDate, wydarzeniaDnia: List<Wydarzenie>): String {
     if (wydarzeniaDnia.isEmpty()) return "${dzienIMiesiac(data)}, brak zajęć"
     val lista = wydarzeniaDnia.joinToString(", ") { "${it.typ.etykieta.lowercase()} ${it.tytul}" }
@@ -67,7 +61,7 @@ fun statusZapisow(w: Wydarzenie, dzis: LocalDate): StatusZapisow = when {
     else -> StatusZapisow.OTWARTE
 }
 
-/** Dziecko przychodzi ok. 30 minut wcześniej na rejestrację (z regulaminów uniwersytetów dziecięcych). */
+// dziecko przychodzi 30 min wcześniej na rejestrację
 const val MINUTY_NA_REJESTRACJE = 30L
 
 fun godzinaZbiorki(w: Wydarzenie): LocalTime = w.start.minusMinutes(MINUTY_NA_REJESTRACJE)

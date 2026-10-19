@@ -45,7 +45,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Nazwy tras nawigacji (ekranów). */
 private object Trasy {
     const val KALENDARZ = "kalendarz"
     const val NA_MIEJSCU = "na_miejscu"
@@ -68,7 +67,7 @@ fun UniDzieciApp() {
     val pokazPasek = ZAKLADKI.any { it.trasa == obecnaTrasa }
 
     Scaffold(
-        // Paski statusu obsługują same ekrany (TopAppBar), tutaj nie dodajemy odstępów.
+        // górny pasek statusu obsługują TopAppBary na ekranach
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (pokazPasek) {

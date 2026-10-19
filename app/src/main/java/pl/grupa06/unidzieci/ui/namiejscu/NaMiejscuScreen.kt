@@ -56,7 +56,6 @@ import pl.grupa06.unidzieci.ui.EtykietaTypu
 import pl.grupa06.unidzieci.ui.otworzNawigacje
 import java.time.LocalDate
 
-/** Praktyczne informacje dla rodzica: najbliższe zajęcia + parking, szatnia, bufet... */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NaMiejscuScreen(

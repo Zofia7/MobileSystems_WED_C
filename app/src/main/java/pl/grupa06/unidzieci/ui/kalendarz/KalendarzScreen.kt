@@ -84,7 +84,6 @@ import java.time.YearMonth
 
 private val SKROTY_DNI = listOf("Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd")
 
-/** Ekran główny: siatka miesiąca z chipami zajęć + lista zajęć wybranego dnia. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KalendarzScreen(
@@ -100,12 +99,11 @@ fun KalendarzScreen(
         endMonth = YearMonth.from(dzis).plusMonths(9),
         firstVisibleMonth = YearMonth.from(wybranyDzien),
         firstDayOfWeek = DayOfWeek.MONDAY,
-        outDateStyle = OutDateStyle.EndOfGrid, // zawsze 6 tygodni, więc wysokość się nie zmienia
+        outDateStyle = OutDateStyle.EndOfGrid, // zawsze 6 tygodni, żeby wysokość nie skakała
     )
     val scope = rememberCoroutineScope()
     val widocznyMiesiac = stan.firstVisibleMonth.yearMonth
 
-    // Wybiera dzień i przewija kalendarz do jego miesiąca.
     fun pokazDzien(data: LocalDate) {
         wybranyDzien = data
         scope.launch { stan.animateScrollToMonth(YearMonth.from(data)) }
@@ -187,7 +185,7 @@ private fun NaglowekDniTygodnia() {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp)
-            .clearAndSetSemantics { }, // TalkBack czyta pełne daty w komórkach, skróty są zbędne
+            .clearAndSetSemantics { }, // TalkBack i tak czyta pełną datę w komórce
     ) {
         SKROTY_DNI.forEachIndexed { i, skrot ->
             val sobota = i == 5
@@ -205,7 +203,6 @@ private fun NaglowekDniTygodnia() {
     }
 }
 
-/** Jedna komórka siatki: numer dnia + do 2 kolorowych chipów z tytułem + „+N”. */
 @Composable
 private fun KomorkaDnia(
     dzien: CalendarDay,
@@ -218,8 +215,7 @@ private fun KomorkaDnia(
     val kolory = MaterialTheme.colorScheme
     val wMiesiacu = dzien.position == DayPosition.MonthDate
     val sobota = dzien.date.dayOfWeek == DayOfWeek.SATURDAY
-    // Przy dużej czcionce tytuły się nie zmieszczą – zostają same kolorowe paski,
-    // a pełna informacja jest w liście pod kalendarzem.
+    // przy dużej czcionce tytuły się nie mieszczą, więc zostają same paski
     val duzaCzcionka = LocalDensity.current.fontScale >= 1.3f
     val opis = opisDniaDlaCzytnika(dzien.date, wydarzeniaDnia)
 
@@ -248,7 +244,7 @@ private fun KomorkaDnia(
             }
             .padding(horizontal = 2.dp, vertical = 3.dp),
     ) {
-        // Numer dnia; dzisiaj w wypełnionym kółku jak w Google Calendar.
+        // dzisiejszy dzień w kółku
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -272,7 +268,6 @@ private fun KomorkaDnia(
 
         Spacer(Modifier.height(3.dp))
         val chipy = chipyDnia(wydarzeniaDnia)
-        // Minione zajęcia są przygaszone, żeby wzrok od razu szedł do nadchodzących.
         chipy.widoczne.forEach { ChipWydarzenia(it, bezTekstu = duzaCzcionka, przygaszony = minal) }
         chipy.etykietaReszty?.let {
             Text(
@@ -312,7 +307,6 @@ private fun ChipWydarzenia(w: Wydarzenie, bezTekstu: Boolean, przygaszony: Boole
     }
 }
 
-/** Wiersz listy pod kalendarzem: godzina, typ (tekstem!), tytuł, sala. */
 @Composable
 private fun WierszWydarzenia(w: Wydarzenie, onClick: () -> Unit) {
     val kolor = kolorTypu(w.typ)

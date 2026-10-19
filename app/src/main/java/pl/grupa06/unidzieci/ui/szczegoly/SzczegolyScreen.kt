@@ -76,7 +76,6 @@ import pl.grupa06.unidzieci.ui.otworzNawigacje
 import pl.grupa06.unidzieci.ui.theme.kolorTypu
 import java.time.LocalDate
 
-/** Szczegóły zajęć: kiedy, gdzie i jak dojść, zapisy, przypomnienie, opis. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SzczegolyScreen(w: Wydarzenie, onWstecz: () -> Unit) {
@@ -85,7 +84,7 @@ fun SzczegolyScreen(w: Wydarzenie, onWstecz: () -> Unit) {
     val scope = rememberCoroutineScope()
     val dzis = remember { LocalDate.now() }
     val kolor = kolorTypu(w.typ)
-    // Prototyp: przypomnienie jest tylko zapamiętane na ekranie. W MVP: powiadomienie lokalne.
+    // TODO: prawdziwe powiadomienie, na razie tylko stan na ekranie
     var przypomnienieUstawione by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
@@ -107,7 +106,6 @@ fun SzczegolyScreen(w: Wydarzenie, onWstecz: () -> Unit) {
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // --- Nagłówek w kolorze typu ---
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,7 +125,6 @@ fun SzczegolyScreen(w: Wydarzenie, onWstecz: () -> Unit) {
                 InfoWiersz(Icons.Outlined.Person, w.prowadzacy)
             }
 
-            // --- Ważna wskazówka: rejestracja 30 min wcześniej ---
             Row(
                 modifier = Modifier
                     .padding(16.dp)
@@ -156,7 +153,6 @@ fun SzczegolyScreen(w: Wydarzenie, onWstecz: () -> Unit) {
                 }
             }
 
-            // --- Gdzie i jak dojść ---
             Sekcja("Gdzie i jak dojść") {
                 Text(w.sala, style = MaterialTheme.typography.titleLarge)
                 Text(
@@ -179,7 +175,6 @@ fun SzczegolyScreen(w: Wydarzenie, onWstecz: () -> Unit) {
                 }
             }
 
-            // --- Zapisy ---
             Sekcja("Zapisy") {
                 val status = statusZapisow(w, dzis)
                 StatusZapisowZnacznik(status)
@@ -215,7 +210,6 @@ fun SzczegolyScreen(w: Wydarzenie, onWstecz: () -> Unit) {
                 }
             }
 
-            // --- Przypomnienie ---
             Sekcja("Przypomnienie") {
                 Text(
                     "Jedno przypomnienie w piątek wieczorem, z godziną zbiórki i salą. Bez spamu.",

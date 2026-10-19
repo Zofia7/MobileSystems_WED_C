@@ -7,8 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Własna paleta zamiast kolorów z tapety (dynamic color), żeby aplikacja
-// wyglądała tak samo na każdym telefonie i miała swój charakter.
+// bez dynamic color, żeby kolory były takie same na każdym telefonie
 
 private val LightColorScheme = lightColorScheme(
     primary = Bordo,
@@ -18,7 +17,7 @@ private val LightColorScheme = lightColorScheme(
     secondary = Color(0xFF5E5557),
     secondaryContainer = Color(0xFFEDE6E3),
     onSecondaryContainer = Atrament,
-    tertiaryContainer = Color(0xFFFFF0C7),   // żółta „karteczka” z ważną wskazówką
+    tertiaryContainer = Color(0xFFFFF0C7),
     onTertiaryContainer = Color(0xFF473600),
     background = Papier,
     onBackground = Atrament,

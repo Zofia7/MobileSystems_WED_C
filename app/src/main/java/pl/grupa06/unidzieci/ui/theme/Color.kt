@@ -3,7 +3,6 @@ package pl.grupa06.unidzieci.ui.theme
 import androidx.compose.ui.graphics.Color
 import pl.grupa06.unidzieci.model.TypWydarzenia
 
-// Akcent: ciemne bordo (kojarzy się z uczelnią), tło: lekko ciepła biel jak papier.
 val Bordo = Color(0xFF8C1D2B)
 val BordoJasne = Color(0xFFF7DCDE)
 val BordoCiemne = Color(0xFF3B0710)
@@ -13,7 +12,7 @@ val Papier = Color(0xFFFBFAF7)
 val PapierCiemny = Color(0xFF171415)
 val Atrament = Color(0xFF1F1B1C)
 
-// Kolory typów zajęć – jak w Google Calendar. Sprawdzone pod kontrast z białym tekstem (≥ 4.5:1).
+// kontrast z białym tekstem min. 4.5:1
 val KolorWykladu = Color(0xFF2F62C9)
 val KolorWarsztatu = Color(0xFFB4530F)
 

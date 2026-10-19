@@ -23,7 +23,7 @@ class KalendarzLogikaTest {
     private val sob24 = LocalDate.of(2026, 10, 24)
     private val sob31 = LocalDate.of(2026, 10, 31)
 
-    /** Minimalne wydarzenie do testów – ważne są tylko pola, które testujemy. */
+    // w testach liczą się tylko niektóre pola
     private fun w(
         id: String, data: LocalDate, start: LocalTime = LocalTime.of(10, 0),
         typ: TypWydarzenia = TypWydarzenia.WYKLAD,
