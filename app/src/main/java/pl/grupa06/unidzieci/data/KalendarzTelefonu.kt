@@ -53,7 +53,7 @@ fun dodajDoKalendarzaTelefonu(
             put(Events.CALENDAR_ID, kalendarzId)
             put(Events.TITLE, "ŁUD ${w.typ.etykieta.lowercase()}: ${w.tytul}")
             put(Events.EVENT_LOCATION, "${w.budynek}, ${w.adres}, Łódź")
-            put(Events.DESCRIPTION, "${w.opis}\nSala: ${w.sala ?: "w mailu od organizatora"}$opisGrupy\nNie zapomnij indeksu!")
+            put(Events.DESCRIPTION, "${w.opis}\nSala: ${w.sala}$opisGrupy\nNie zapomnij indeksu!")
             put(Events.DTSTART, w.data.atTime(start).atZone(STREFA).toInstant().toEpochMilli())
             put(Events.DTEND, w.data.atTime(koniec).atZone(STREFA).toInstant().toEpochMilli())
             put(Events.EVENT_TIMEZONE, STREFA.id)

@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import pl.grupa06.unidzieci.logika.Grupa
-import pl.grupa06.unidzieci.logika.StatusZapisow
 import pl.grupa06.unidzieci.logika.bladRejestracji
 import pl.grupa06.unidzieci.logika.chipyDnia
 import pl.grupa06.unidzieci.logika.dataDluga
@@ -12,13 +11,12 @@ import pl.grupa06.unidzieci.logika.doImportu
 import pl.grupa06.unidzieci.logika.domyslnieWybranyDzien
 import pl.grupa06.unidzieci.logika.filtrujZajecia
 import pl.grupa06.unidzieci.logika.miejscaDlaBudynku
-import pl.grupa06.unidzieci.logika.godzinaZbiorki
 import pl.grupa06.unidzieci.logika.godzinyGrupy
 import pl.grupa06.unidzieci.logika.grupujPoDniach
 import pl.grupa06.unidzieci.logika.liczbaZajec
 import pl.grupa06.unidzieci.logika.najblizszyDzienZZajeciami
 import pl.grupa06.unidzieci.logika.opisDniaDlaCzytnika
-import pl.grupa06.unidzieci.logika.statusZapisow
+import pl.grupa06.unidzieci.logika.opisMiejsc
 import pl.grupa06.unidzieci.model.KategoriaMiejsca
 import pl.grupa06.unidzieci.model.Miejsce
 import pl.grupa06.unidzieci.model.TypWydarzenia
@@ -35,13 +33,13 @@ class KalendarzLogikaTest {
     private fun w(
         id: String, data: LocalDate, start: LocalTime = LocalTime.of(10, 0),
         typ: TypWydarzenia = TypWydarzenia.WYKLAD,
-        link: String? = null, termin: LocalDate? = null, wolne: Int? = null,
+        wolne: Int? = null, oplata: String? = null,
         grupaII: LocalTime? = null, budynek: String = "B",
     ) = Wydarzenie(
         id = id, tytul = "Tytuł $id", typ = typ, data = data, start = start, koniec = start.plusHours(1),
         startGrupaII = grupaII, budynek = budynek, sala = "S", adres = "A", miejscePotwierdzone = true,
-        krokiDojscia = emptyList(), opis = "", prowadzacy = null, grupaWiekowa = "", oplata = null,
-        linkZapisy = link, terminZapisow = termin, wolneMiejsca = wolne,
+        krokiDojscia = emptyList(), opis = "", prowadzacy = null, grupaWiekowa = "", oplata = oplata,
+        wolneMiejsca = wolne, limitMiejsc = if (wolne != null) 15 else null,
     )
 
     @Test
@@ -83,13 +81,10 @@ class KalendarzLogikaTest {
     }
 
     @Test
-    fun statusZapisow_wszystkiePrzypadki() {
-        val dzis = LocalDate.of(2026, 10, 19)
-        val link = "https://example.org"
-        assertEquals(StatusZapisow.WSTEP_WOLNY, statusZapisow(w("a", sob24), dzis))
-        assertEquals(StatusZapisow.OTWARTE, statusZapisow(w("b", sob24, link = link, termin = dzis, wolne = 3), dzis))
-        assertEquals(StatusZapisow.BRAK_MIEJSC, statusZapisow(w("c", sob24, link = link, termin = sob24, wolne = 0), dzis))
-        assertEquals(StatusZapisow.ZAMKNIETE, statusZapisow(w("d", sob24, link = link, termin = dzis.minusDays(1), wolne = 5), dzis))
+    fun opisMiejsc_warsztatyZLimitem_wykladyBez() {
+        assertNull(opisMiejsc(w("wyklad", sob24)))
+        assertEquals("Wolne miejsca: 4 z 15 · 30 zł", opisMiejsc(w("a", sob24, wolne = 4, oplata = "30 zł")))
+        assertEquals("Brak wolnych miejsc · 30 zł", opisMiejsc(w("b", sob24, wolne = 0, oplata = "30 zł")))
     }
 
     @Test
@@ -113,11 +108,6 @@ class KalendarzLogikaTest {
     }
 
     @Test
-    fun zbiorka_30minutPrzedZajeciami() {
-        assertEquals(LocalTime.of(9, 30), godzinaZbiorki(w("a", sob24, LocalTime.of(10, 0))))
-    }
-
-    @Test
     fun godzinyGrupy_drugaGrupaPozniejTenSamCzas() {
         val wyklad = w("a", sob24, LocalTime.of(10, 0), grupaII = LocalTime.of(12, 0))
         assertEquals(LocalTime.of(10, 0) to LocalTime.of(11, 0), godzinyGrupy(wyklad, Grupa.I))
@@ -137,7 +127,7 @@ class KalendarzLogikaTest {
     }
 
     private fun m(id: String, budynek: String?) = Miejsce(
-        id, KategoriaMiejsca.PARKING, "M $id", "", null, budynek, null, null, potwierdzone = true,
+        id, KategoriaMiejsca.PARKING, "M $id", "", budynek, null, null, null, potwierdzone = true,
     )
 
     @Test

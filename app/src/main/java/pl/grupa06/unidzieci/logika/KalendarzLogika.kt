@@ -46,24 +46,12 @@ fun opisDniaDlaCzytnika(data: LocalDate, wydarzeniaDnia: List<Wydarzenie>): Stri
     return "${dzienIMiesiac(data)}, ${liczbaZajec(wydarzeniaDnia.size)}: $lista"
 }
 
-enum class StatusZapisow(val etykieta: String) {
-    OTWARTE("Zapisy otwarte"),
-    BRAK_MIEJSC("Brak wolnych miejsc"),
-    ZAMKNIETE("Zapisy zamknięte"),
-    WSTEP_WOLNY("Wstęp wolny, bez zapisów"),
+// linijka pod warsztatem w kalendarzu, np. "Wolne miejsca: 4 z 15 · 30 zł"; wykłady nie mają limitu
+fun opisMiejsc(w: Wydarzenie): String? {
+    val wolne = w.wolneMiejsca ?: return null
+    val miejsca = if (wolne == 0) "Brak wolnych miejsc" else "Wolne miejsca: $wolne z ${w.limitMiejsc}"
+    return listOfNotNull(miejsca, w.oplata).joinToString(" · ")
 }
-
-fun statusZapisow(w: Wydarzenie, dzis: LocalDate): StatusZapisow = when {
-    w.linkZapisy == null -> StatusZapisow.WSTEP_WOLNY
-    w.terminZapisow != null && dzis.isAfter(w.terminZapisow) -> StatusZapisow.ZAMKNIETE
-    w.wolneMiejsca == 0 -> StatusZapisow.BRAK_MIEJSC
-    else -> StatusZapisow.OTWARTE
-}
-
-// dziecko przychodzi 30 min wcześniej na rejestrację
-const val MINUTY_NA_REJESTRACJE = 30L
-
-fun godzinaZbiorki(w: Wydarzenie): LocalTime = w.start.minusMinutes(MINUTY_NA_REJESTRACJE)
 
 // wykłady mają dwie grupy (gr. II później), zajęcia trwają tyle samo
 enum class Grupa(val etykieta: String) { I("Grupa I"), II("Grupa II") }

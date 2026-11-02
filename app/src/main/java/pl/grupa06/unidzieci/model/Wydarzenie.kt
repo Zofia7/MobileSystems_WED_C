@@ -17,29 +17,31 @@ data class Wydarzenie(
     val koniec: LocalTime,
     val startGrupaII: LocalTime?, // wykłady są powtarzane dla drugiej grupy
     val budynek: String,
-    val sala: String?, // null = sala podana w mailu od organizatora
+    val sala: String,
     val adres: String,
     val miejscePotwierdzone: Boolean,
     val krokiDojscia: List<String>,
-    val opis: String,
+    val opis: String, // trafia do wydarzenia w kalendarzu telefonu
     val prowadzacy: String?,
     val grupaWiekowa: String,
     val oplata: String?,
-    val linkZapisy: String?, // null = wstęp wolny
-    val terminZapisow: LocalDate?,
-    val wolneMiejsca: Int?,
+    val wolneMiejsca: Int?, // null = bez limitu (wykłady)
+    val limitMiejsc: Int?,
+    val wreczenieIndeksow: Boolean = false, // pierwszy wykład semestru
 )
 
-enum class KategoriaMiejsca { WEJSCIE, TRANSMISJA, PARKING, SZATNIA, BUFET, KONTAKT }
+enum class KategoriaMiejsca { PARKING, SZATNIA, KONTAKT }
+
+data class Pinezka(val lat: Double, val lng: Double)
 
 data class Miejsce(
     val id: String,
     val kategoria: KategoriaMiejsca,
     val nazwa: String,
     val opis: String,
-    val godziny: String?,
     val budynek: String?, // null = dotyczy wszystkich budynków
     val adres: String?,   // do przycisku "Prowadź"
+    val pinezka: Pinezka?, // dokładne miejsce na mapie (parking)
     val telefon: String?,
     val potwierdzone: Boolean,
 )

@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Directions
@@ -35,10 +34,8 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Event
-import androidx.compose.material.icons.outlined.EventAvailable
-import androidx.compose.material.icons.outlined.LocalCafe
 import androidx.compose.material.icons.outlined.LocalParking
-import androidx.compose.material.icons.outlined.MeetingRoom
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.NotificationAdd
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
@@ -46,7 +43,6 @@ import androidx.compose.material.icons.outlined.SupportAgent
 import androidx.compose.material.icons.outlined.Tv
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -71,7 +67,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
@@ -82,27 +77,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import pl.grupa06.unidzieci.logika.Grupa
-import pl.grupa06.unidzieci.logika.MINUTY_NA_REJESTRACJE
-import pl.grupa06.unidzieci.logika.StatusZapisow
 import pl.grupa06.unidzieci.logika.dataDluga
-import pl.grupa06.unidzieci.logika.dzienIMiesiac
-import pl.grupa06.unidzieci.logika.godzina
-import pl.grupa06.unidzieci.logika.godzinaZbiorki
 import pl.grupa06.unidzieci.logika.godzinyGrupy
 import pl.grupa06.unidzieci.logika.miejscaDlaBudynku
 import pl.grupa06.unidzieci.logika.przedzialGodzin
-import pl.grupa06.unidzieci.logika.statusZapisow
 import pl.grupa06.unidzieci.model.KategoriaMiejsca
 import pl.grupa06.unidzieci.model.Miejsce
+import pl.grupa06.unidzieci.model.TypWydarzenia
 import pl.grupa06.unidzieci.model.Wydarzenie
 import pl.grupa06.unidzieci.ui.DoPotwierdzenia
 import pl.grupa06.unidzieci.ui.EtykietaTypu
 import pl.grupa06.unidzieci.ui.dodajDoKalendarza
-import pl.grupa06.unidzieci.ui.otworzLink
 import pl.grupa06.unidzieci.ui.otworzNawigacje
+import pl.grupa06.unidzieci.ui.otworzPinezke
 import pl.grupa06.unidzieci.ui.zadzwon
 import pl.grupa06.unidzieci.ui.theme.kolorTypu
-import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,7 +107,6 @@ fun SzczegolyScreen(
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val dzis = remember { LocalDate.now() }
     val kolor = kolorTypu(w.typ)
     val miejscaNaMiejscu = remember(miejsca, w.budynek) { miejscaDlaBudynku(miejsca, w.budynek) }
     var pokazKroki by rememberSaveable { mutableStateOf(false) }
@@ -167,6 +155,9 @@ fun SzczegolyScreen(
                 }
                 InfoWiersz(Icons.Outlined.ChildCare, "Dla dzieci: ${w.grupaWiekowa}")
                 w.prowadzacy?.let { InfoWiersz(Icons.Outlined.Person, it) }
+                if (w.typ == TypWydarzenia.WYKLAD) {
+                    InfoWiersz(Icons.Outlined.Tv, "Wykład jest też transmitowany przez internet")
+                }
                 if (onPrzelaczZapis != null) {
                     FilterChip(
                         selected = zapisany,
@@ -198,18 +189,14 @@ fun SzczegolyScreen(
                 )
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    val zbiorka = if (w.startGrupaII != null) {
-                        "${godzina(godzinaZbiorki(w))} (gr. I) lub ${godzina(w.startGrupaII.minusMinutes(MINUTY_NA_REJESTRACJE))} (gr. II)"
-                    } else {
-                        godzina(godzinaZbiorki(w))
-                    }
                     Text(
-                        "Bądźcie na miejscu o $zbiorka",
+                        if (w.wreczenieIndeksow) "Na tym wykładzie dzieci dostają indeksy" else "Zabierzcie indeks",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                     )
                     Text(
-                        "Nie zapomnijcie indeksu, po zajęciach dziecko dostaje do niego zaliczenie.",
+                        if (w.wreczenieIndeksow) "To inauguracja semestru: JM Rektor PŁ otwiera nowy semestr ŁUD."
+                        else "Indeks ŁUD dziecko dostało na pierwszym wykładzie semestru.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                     )
@@ -217,7 +204,7 @@ fun SzczegolyScreen(
             }
 
             Sekcja("Gdzie i jak dojść") {
-                Text(w.sala ?: "Sala w mailu od organizatora", style = MaterialTheme.typography.titleLarge)
+                Text(w.sala, style = MaterialTheme.typography.titleLarge)
                 Text(
                     "${w.budynek}, ${w.adres}",
                     style = MaterialTheme.typography.bodyLarge,
@@ -269,45 +256,6 @@ fun SzczegolyScreen(
                 }
             }
 
-            Sekcja("Zapisy") {
-                val status = statusZapisow(w, dzis)
-                StatusZapisowZnacznik(status)
-                Spacer(Modifier.height(10.dp))
-                w.oplata?.let { Text("Opłata: $it", style = MaterialTheme.typography.bodyLarge) }
-                if (w.wolneMiejsca != null) {
-                    Text("Wolne miejsca: ${w.wolneMiejsca}", style = MaterialTheme.typography.bodyLarge)
-                }
-                when (status) {
-                    StatusZapisow.WSTEP_WOLNY -> Text(
-                        "Wystarczy przyjść z dzieckiem.",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    StatusZapisow.ZAMKNIETE -> Text(
-                        "Zapisy na ten semestr były ${dzienIMiesiac(w.terminZapisow!!)}. " +
-                            "Kolejna rekrutacja jest w styczniu (semestr letni).",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    else -> {}
-                }
-                if (w.linkZapisy != null) {
-                    Spacer(Modifier.height(10.dp))
-                    FilledTonalButton(
-                        onClick = { otworzLink(context, w.linkZapisy) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(if (status == StatusZapisow.OTWARTE) "Przejdź do zapisów" else "Strona zapisów")
-                        Spacer(Modifier.width(8.dp))
-                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                    }
-                    Text(
-                        "Zapisy prowadzi organizator. Aplikacja nie zbiera danych dziecka.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                }
-            }
-
             Sekcja("Przypomnienie") {
                 Text(
                     "Jedno przypomnienie dzień wcześniej, z godziną i salą. Bez spamu.",
@@ -345,10 +293,6 @@ fun SzczegolyScreen(
                     Spacer(Modifier.width(8.dp))
                     Text("Dodaj do kalendarza w telefonie")
                 }
-            }
-
-            Sekcja("O zajęciach") {
-                Text(w.opis, style = MaterialTheme.typography.bodyLarge)
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -402,27 +346,30 @@ private fun KrokDojscia(numer: Int, tekst: String) {
 }
 
 private fun ikona(k: KategoriaMiejsca): ImageVector = when (k) {
-    KategoriaMiejsca.WEJSCIE -> Icons.Outlined.MeetingRoom
-    KategoriaMiejsca.TRANSMISJA -> Icons.Outlined.Tv
     KategoriaMiejsca.PARKING -> Icons.Outlined.LocalParking
     KategoriaMiejsca.SZATNIA -> Icons.Outlined.Checkroom
-    KategoriaMiejsca.BUFET -> Icons.Outlined.LocalCafe
     KategoriaMiejsca.KONTAKT -> Icons.Outlined.SupportAgent
 }
 
-// zwinięty: ikona, nazwa i jedna linia opisu; po kliknięciu cały opis i przyciski
+// zwinięty: ikona, nazwa i jedna linia opisu; po kliknięciu cały opis i przyciski.
+// Miejsce z pinezką (parking) od razu otwiera mapę.
 @Composable
 private fun WierszMiejsca(m: Miejsce) {
     val context = LocalContext.current
     var rozwiniety by rememberSaveable(m.id) { mutableStateOf(false) }
+    val pinezka = m.pinezka
     Surface(
-        onClick = { rozwiniety = !rozwiniety },
+        onClick = {
+            if (pinezka != null) otworzPinezke(context, pinezka, m.nazwa) else rozwiniety = !rozwiniety
+        },
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
-            .semantics { stateDescription = if (rozwiniety) "rozwinięte" else "zwinięte" },
+            .semantics {
+                if (pinezka == null) stateDescription = if (rozwiniety) "rozwinięte" else "zwinięte"
+            },
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -452,9 +399,13 @@ private fun WierszMiejsca(m: Miejsce) {
                     }
                 }
                 Icon(
-                    if (rozwiniety) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.outline,
+                    when {
+                        pinezka != null -> Icons.Outlined.Map
+                        rozwiniety -> Icons.Filled.ExpandLess
+                        else -> Icons.Filled.ExpandMore
+                    },
+                    contentDescription = if (pinezka != null) "Pokaż na mapie" else null,
+                    tint = if (pinezka != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 )
             }
             AnimatedVisibility(visible = rozwiniety) {
@@ -462,9 +413,6 @@ private fun WierszMiejsca(m: Miejsce) {
                     modifier = Modifier.padding(start = 48.dp, top = 6.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    m.godziny?.let {
-                        Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    }
                     Text(m.opis, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (!m.potwierdzone) DoPotwierdzenia()
                     Row {
@@ -492,25 +440,5 @@ private fun WierszMiejsca(m: Miejsce) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun StatusZapisowZnacznik(status: StatusZapisow) {
-    val (tlo, tekst) = when (status) {
-        StatusZapisow.OTWARTE -> Color(0xFFDDF2E1) to Color(0xFF1C5B2A)
-        StatusZapisow.WSTEP_WOLNY -> Color(0xFFDDE8F7) to Color(0xFF1D3F73)
-        StatusZapisow.BRAK_MIEJSC, StatusZapisow.ZAMKNIETE -> Color(0xFFEDE6E3) to Color(0xFF574F51)
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(tlo)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-    ) {
-        Icon(Icons.Outlined.EventAvailable, contentDescription = null, tint = tekst, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(status.etykieta, style = MaterialTheme.typography.labelLarge, color = tekst)
     }
 }

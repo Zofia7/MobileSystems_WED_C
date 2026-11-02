@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.EditCalendar
+import androidx.compose.material.icons.outlined.EventSeat
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -102,6 +103,7 @@ import pl.grupa06.unidzieci.logika.grupujPoDniach
 import pl.grupa06.unidzieci.logika.najblizszyDzienZZajeciami
 import pl.grupa06.unidzieci.logika.nazwaMiesiaca
 import pl.grupa06.unidzieci.logika.opisDniaDlaCzytnika
+import pl.grupa06.unidzieci.logika.opisMiejsc
 import pl.grupa06.unidzieci.logika.przedzialGodzin
 import pl.grupa06.unidzieci.model.Wydarzenie
 import pl.grupa06.unidzieci.ui.theme.kolorTypu
@@ -545,10 +547,27 @@ private fun WierszWydarzenia(w: Wydarzenie, przypomnienie: Boolean, zapisany: Bo
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        listOfNotNull(w.sala, w.budynek).joinToString(", "),
+                        "${w.sala}, ${w.budynek}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+                opisMiejsc(w)?.let { miejsca ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.EventSeat,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            miejsca,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (w.wolneMiejsca == 0) FontWeight.Normal else FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             if (zapisany) {

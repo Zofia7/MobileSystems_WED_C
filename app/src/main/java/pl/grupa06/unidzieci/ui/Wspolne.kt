@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import pl.grupa06.unidzieci.model.Pinezka
 import pl.grupa06.unidzieci.model.TypWydarzenia
 import pl.grupa06.unidzieci.model.Wydarzenie
 import pl.grupa06.unidzieci.ui.theme.kolorTypu
@@ -61,6 +62,12 @@ private fun uruchom(context: Context, intent: Intent, bladTekst: String) {
 // szukamy po adresie, mapy same znajdą budynek
 fun otworzNawigacje(context: Context, adres: String) {
     val uri = Uri.parse("geo:0,0?q=${Uri.encode("$adres, Łódź")}")
+    uruchom(context, Intent(Intent.ACTION_VIEW, uri), "Brak aplikacji z mapami na tym telefonie")
+}
+
+// dokładne miejsce (np. parking) jako pinezka z podpisem
+fun otworzPinezke(context: Context, p: Pinezka, podpis: String) {
+    val uri = Uri.parse("geo:${p.lat},${p.lng}?q=${p.lat},${p.lng}(${Uri.encode(podpis)})")
     uruchom(context, Intent(Intent.ACTION_VIEW, uri), "Brak aplikacji z mapami na tym telefonie")
 }
 
