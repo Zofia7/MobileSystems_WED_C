@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.LocalCafe
 import androidx.compose.material.icons.outlined.LocalParking
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.NotificationAdd
@@ -101,6 +102,7 @@ fun SzczegolyScreen(
     onPrzelaczPrzypomnienie: () -> Unit,
     zapisany: Boolean,
     onPrzelaczZapis: (() -> Unit)?, // null = niezalogowany, wtedy bez przycisku
+    onWMiedzyczasie: () -> Unit,
     onWstecz: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -288,6 +290,19 @@ fun SzczegolyScreen(
                     Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Dodaj do kalendarza w telefonie")
+                }
+            }
+
+            Sekcja("W międzyczasie") {
+                Text(
+                    "Czekasz na dziecko? Zobacz, gdzie w pobliżu zjeść albo spędzić czas.",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(onClick = onWMiedzyczasie, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Outlined.LocalCafe, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Co robić w pobliżu")
                 }
             }
             Spacer(Modifier.height(24.dp))
