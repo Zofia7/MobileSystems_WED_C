@@ -132,10 +132,7 @@ fun UniDzieciApp() {
             }
             composable(Trasy.W_MIEDZYCZASIE) {
                 WMiedzyczasieScreen(
-                    wydarzenia = SampleData.wydarzenia,
-                    zapisane = pamiec.zapisane,
                     miejsca = SampleData.miejscaDlaRodzicow,
-                    onWydarzenieClick = { id -> nav.navigate(Trasy.szczegoly(id)) },
                 )
             }
             composable(Trasy.SZCZEGOLY) { wpisSzczegolow ->
