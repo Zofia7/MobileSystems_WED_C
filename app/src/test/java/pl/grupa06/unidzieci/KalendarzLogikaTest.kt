@@ -37,7 +37,7 @@ class KalendarzLogikaTest {
         grupaII: LocalTime? = null, budynek: String = "B",
     ) = Wydarzenie(
         id = id, tytul = "Tytuł $id", typ = typ, data = data, start = start, koniec = start.plusHours(1),
-        startGrupaII = grupaII, budynek = budynek, sala = "S", adres = "A", miejscePotwierdzone = true,
+        startGrupaII = grupaII, budynek = budynek, sala = "S", adres = "A",
         krokiDojscia = emptyList(), opis = "", prowadzacy = null, grupaWiekowa = "", oplata = oplata,
         wolneMiejsca = wolne, limitMiejsc = if (wolne != null) 15 else null,
     )
@@ -127,7 +127,7 @@ class KalendarzLogikaTest {
     }
 
     private fun m(id: String, budynek: String?) = Miejsce(
-        id, KategoriaMiejsca.PARKING, "M $id", "", budynek, null, null, null, potwierdzone = true,
+        id, KategoriaMiejsca.PARKING, "M $id", "", budynek, null, null, null,
     )
 
     @Test

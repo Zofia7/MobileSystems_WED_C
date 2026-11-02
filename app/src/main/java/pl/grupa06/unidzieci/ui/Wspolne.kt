@@ -35,20 +35,6 @@ fun EtykietaTypu(typ: TypWydarzenia, modifier: Modifier = Modifier) {
     )
 }
 
-// dla danych, których nie ma na stronie organizatora
-@Composable
-fun DoPotwierdzenia(modifier: Modifier = Modifier) {
-    Text(
-        text = "Do potwierdzenia z organizatorem",
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    )
-}
-
 // otwieranie innych aplikacji (nie wymaga uprawnień)
 
 private fun uruchom(context: Context, intent: Intent, bladTekst: String) {

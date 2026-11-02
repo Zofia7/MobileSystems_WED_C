@@ -32,7 +32,6 @@ object SampleData {
         id = id, tytul = tytul, typ = TypWydarzenia.WYKLAD, data = data,
         start = LocalTime.of(10, 0), koniec = LocalTime.of(11, 0), startGrupaII = grupaII,
         budynek = B9.nazwa, sala = "Aula F10 (III piętro)", adres = B9.adres,
-        miejscePotwierdzone = true,
         krokiDojscia = listOf(
             "Wejdź do budynku B9 od al. Politechniki.",
             "Wejdź schodami lub wjedź windą na III piętro.",
@@ -47,12 +46,11 @@ object SampleData {
     private fun warsztat(
         id: String, tytul: String, dziedzina: String, data: LocalDate,
         minuty: Long, wiek: String, b: Budynek, sala: Sala, wolne: Int,
-        kroki: List<String>? = null, potwierdzone: Boolean = false,
+        kroki: List<String>? = null,
     ) = Wydarzenie(
         id = id, tytul = tytul, typ = TypWydarzenia.WARSZTAT, data = data,
         start = LocalTime.of(16, 30), koniec = LocalTime.of(16, 30).plusMinutes(minuty), startGrupaII = null,
         budynek = b.nazwa, sala = "${sala.nazwa} (${sala.pietro})", adres = b.adres,
-        miejscePotwierdzone = potwierdzone,
         krokiDojscia = kroki ?: listOf("Wejdź do budynku: ${b.nazwa}, ${b.adres}.", "${sala.nazwa} jest na: ${sala.pietro}."),
         opis = "Warsztat z dziedziny: $dziedzina. Czas trwania: $minuty min.",
         prowadzacy = null, grupaWiekowa = wiek, oplata = "30 zł",
@@ -94,7 +92,7 @@ object SampleData {
         warsztat("a5", "Co wyobraźnia zmaluje, długopis wydrukuje", "druk 3D", d(10, 22), 45, "8-9 lat", CTI, CTI206, wolne = 3),
         warsztat("a6", "I Ty możesz pilotować samolot!", "lotnictwo", d(10, 29), 90, "12 lat", LICEUM, NEWTON, wolne = 0,
             kroki = listOf("Wejdź do budynku liceum od ul. Różyckiego.", "Warsztat jest w pracowni Newton Room."),
-            potwierdzone = true),
+        ),
         // dopracowany przykład: pełne dane dojścia
         warsztat("a7", "Jak namówić pociąg, żeby latał?", "elektromagnetyzm", d(11, 4), 45, "8-12 lat", B9, S441, wolne = 4,
             kroki = listOf(
@@ -103,7 +101,7 @@ object SampleData {
                 "Wjedź windą lub wejdź schodami na IV piętro.",
                 "Sala 441 jest w korytarzu Instytutu Informatyki.",
             ),
-            potwierdzone = true),
+        ),
         warsztat("a8", "Ile oczu ma mucha? - czyli podróż w głąb mikroświata", "inżynieria materiałowa", d(11, 5), 50, "10-12 lat", B9, S160, wolne = 6),
         warsztat("a9", "Totolotek", "matematyka", d(11, 12), 45, "10-12 lat", B9, S53, wolne = 3),
         warsztat("a10", "Sieć o bardzo drobnych oczkach", "chemia", d(11, 18), 50, "8-12 lat", B9, S160, wolne = 5),
@@ -116,25 +114,25 @@ object SampleData {
     val miejsca: List<Miejsce> = listOf(
         // parkingi: pinezki z OpenStreetMap
         Miejsce("p-b9", KategoriaMiejsca.PARKING, "Parking pod Zatoką Sportu", "al. Politechniki 10",
-            B9.nazwa, null, Pinezka(51.74638, 19.45251), null, potwierdzone = true),
+            B9.nazwa, null, Pinezka(51.74638, 19.45251), null),
         Miejsce("p-cti", KategoriaMiejsca.PARKING, "Parking przy ul. ks. Skorupki", "róg ul. Wólczańskiej",
-            CTI.nazwa, null, Pinezka(51.74918, 19.45681), null, potwierdzone = true),
+            CTI.nazwa, null, Pinezka(51.74918, 19.45681), null),
         Miejsce("p-liceum", KategoriaMiejsca.PARKING, "Parking przy ul. Różyckiego", "obok liceum",
-            LICEUM.nazwa, null, Pinezka(51.73879, 19.45741), null, potwierdzone = true),
+            LICEUM.nazwa, null, Pinezka(51.73879, 19.45741), null),
 
         // szatnie: przykładowe dane
         Miejsce("s-b9", KategoriaMiejsca.SZATNIA, "Szatnia",
             "Na parterze, obok wejścia głównego. Bezpłatna, kurtkę oddajesz za numerek.",
-            B9.nazwa, null, null, null, potwierdzone = false),
+            B9.nazwa, null, null, null),
         Miejsce("s-cti", KategoriaMiejsca.SZATNIA, "Szatnia",
             "Na parterze przy wejściu. Bezpłatna.",
-            CTI.nazwa, null, null, null, potwierdzone = false),
+            CTI.nazwa, null, null, null),
         Miejsce("s-liceum", KategoriaMiejsca.SZATNIA, "Szatnia",
             "Na parterze liceum. Bezpłatna.",
-            LICEUM.nazwa, null, null, null, potwierdzone = false),
+            LICEUM.nazwa, null, null, null),
 
         Miejsce("kontakt", KategoriaMiejsca.KONTAKT, "Biuro ŁUD",
             "Biblioteka Główna PŁ, budynek B22, IV piętro, pok. 418. Pytania o zajęcia, sale i indeksy.",
-            null, "Biblioteka Główna Politechniki Łódzkiej, ul. Wólczańska 223", null, "426312809", potwierdzone = true),
+            null, "Biblioteka Główna Politechniki Łódzkiej, ul. Wólczańska 223", null, "426312809"),
     )
 }

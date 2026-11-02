@@ -85,7 +85,6 @@ import pl.grupa06.unidzieci.model.KategoriaMiejsca
 import pl.grupa06.unidzieci.model.Miejsce
 import pl.grupa06.unidzieci.model.TypWydarzenia
 import pl.grupa06.unidzieci.model.Wydarzenie
-import pl.grupa06.unidzieci.ui.DoPotwierdzenia
 import pl.grupa06.unidzieci.ui.EtykietaTypu
 import pl.grupa06.unidzieci.ui.dodajDoKalendarza
 import pl.grupa06.unidzieci.ui.otworzNawigacje
@@ -210,9 +209,6 @@ fun SzczegolyScreen(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (!w.miejscePotwierdzone) {
-                    DoPotwierdzenia(Modifier.padding(top = 8.dp))
-                }
                 Spacer(Modifier.height(14.dp))
                 Button(
                     onClick = { otworzNawigacje(context, "${w.budynek}, ${w.adres}") },
@@ -414,7 +410,6 @@ private fun WierszMiejsca(m: Miejsce) {
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(m.opis, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (!m.potwierdzone) DoPotwierdzenia()
                     Row {
                         if (m.adres != null) {
                             TextButton(

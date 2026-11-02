@@ -19,7 +19,6 @@ data class Wydarzenie(
     val budynek: String,
     val sala: String,
     val adres: String,
-    val miejscePotwierdzone: Boolean,
     val krokiDojscia: List<String>,
     val opis: String, // trafia do wydarzenia w kalendarzu telefonu
     val prowadzacy: String?,
@@ -43,5 +42,4 @@ data class Miejsce(
     val adres: String?,   // do przycisku "Prowadź"
     val pinezka: Pinezka?, // dokładne miejsce na mapie (parking)
     val telefon: String?,
-    val potwierdzone: Boolean,
 )
