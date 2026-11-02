@@ -7,7 +7,7 @@ enum class RodzajMiejsca(val etykieta: String) {
     ROZRYWKA("Rozrywka"),
 }
 
-data class GodzinyOtwarcia(val od: LocalTime, val doGodziny: LocalTime?) // null = nie wiadomo, do której
+data class GodzinyOtwarcia(val od: LocalTime, val doGodziny: LocalTime)
 
 // miejsce, w którym rodzic może poczekać, aż dziecko skończy zajęcia
 data class MiejsceDlaRodzica(
@@ -16,7 +16,6 @@ data class MiejsceDlaRodzica(
     val rodzaj: RodzajMiejsca,
     val opis: String,
     val adres: String,
-    val dojscie: String, // np. "w budynku B9", "ok. 8 min pieszo"
     val pinezka: Pinezka,
     val telefon: String?,
     val strona: String?,

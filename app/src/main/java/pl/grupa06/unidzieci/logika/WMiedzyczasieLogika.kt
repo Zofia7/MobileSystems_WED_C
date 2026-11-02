@@ -30,23 +30,30 @@ fun zajeciaDoCzekania(wydarzenia: List<Wydarzenie>, zapisane: Set<String>, teraz
 }
 
 // kolejność = kolejność na liście
-enum class Dostepnosc(val etykieta: String) {
-    OTWARTE("Otwarte w czasie zajęć"),
-    NIEZNANE("Otwarte, gdy zaczynają się zajęcia (godzina zamknięcia nieznana)"),
-    CZESCIOWO("Otwarte tylko przez część zajęć"),
-    ZAMKNIETE("Zamknięte w czasie zajęć"),
-}
+enum class Dostepnosc { OTWARTE, CZESCIOWO, ZAMKNIETE }
 
 fun dostepnosc(m: MiejsceDlaRodzica, w: Wydarzenie): Dostepnosc {
     val godziny = godzinyWDniu(m, w.data) ?: return Dostepnosc.ZAMKNIETE
     val (od, doGodziny) = czasZajec(w)
-    val zamkniecie = godziny.doGodziny
     return when {
-        !doGodziny.isAfter(godziny.od) -> Dostepnosc.ZAMKNIETE // zajęcia kończą się przed otwarciem
-        zamkniecie == null -> if (!od.isBefore(godziny.od)) Dostepnosc.NIEZNANE else Dostepnosc.CZESCIOWO
-        !od.isBefore(godziny.od) && !doGodziny.isAfter(zamkniecie) -> Dostepnosc.OTWARTE
-        od.isBefore(zamkniecie) -> Dostepnosc.CZESCIOWO
+        !od.isBefore(godziny.od) && !doGodziny.isAfter(godziny.doGodziny) -> Dostepnosc.OTWARTE
+        od.isBefore(godziny.doGodziny) && doGodziny.isAfter(godziny.od) -> Dostepnosc.CZESCIOWO
         else -> Dostepnosc.ZAMKNIETE
+    }
+}
+
+// tekst na karcie miejsca, np. "Zamyka się o 17:00, jeszcze w trakcie zajęć"
+fun opisDostepnosci(m: MiejsceDlaRodzica, w: Wydarzenie): String {
+    val godziny = godzinyWDniu(m, w.data)
+    return when (dostepnosc(m, w)) {
+        Dostepnosc.OTWARTE -> "Otwarte w czasie zajęć"
+        Dostepnosc.ZAMKNIETE -> "Zamknięte w czasie zajęć"
+        Dostepnosc.CZESCIOWO ->
+            if (godziny != null && czasZajec(w).first.isBefore(godziny.od)) {
+                "Otwiera się o ${godzina(godziny.od)}, już w trakcie zajęć"
+            } else {
+                "Zamyka się o ${godzina(godziny!!.doGodziny)}, jeszcze w trakcie zajęć"
+            }
     }
 }
 
@@ -54,8 +61,15 @@ fun dostepnosc(m: MiejsceDlaRodzica, w: Wydarzenie): Dostepnosc {
 fun posortujMiejsca(miejsca: List<MiejsceDlaRodzica>, w: Wydarzenie?): List<MiejsceDlaRodzica> =
     if (w == null) miejsca else miejsca.sortedBy { dostepnosc(it, w).ordinal }
 
-fun opisGodzin(godziny: GodzinyOtwarcia?): String = when {
-    godziny == null -> "zamknięte"
-    godziny.doGodziny == null -> "od ${godzina(godziny.od)}"
-    else -> przedzialGodzin(godziny.od, godziny.doGodziny)
+private fun godziny(g: GodzinyOtwarcia?): String =
+    if (g == null) "zamknięte" else przedzialGodzin(g.od, g.doGodziny)
+
+// godziny na cały tydzień, np. "pn-pt 8:00-17:00 · sob-nd 9:00-16:00" albo "codziennie 10:00-21:00"
+fun godzinyTygodnia(m: MiejsceDlaRodzica): String = when {
+    m.godzinyPnPt == m.godzinySobota && m.godzinySobota == m.godzinyNiedziela ->
+        if (m.godzinyPnPt == null) "zamknięte" else "codziennie ${godziny(m.godzinyPnPt)}"
+    m.godzinySobota == m.godzinyNiedziela ->
+        "pn-pt ${godziny(m.godzinyPnPt)} · sob-nd ${godziny(m.godzinySobota)}"
+    else ->
+        "pn-pt ${godziny(m.godzinyPnPt)} · sob ${godziny(m.godzinySobota)} · nd ${godziny(m.godzinyNiedziela)}"
 }

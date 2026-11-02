@@ -6,6 +6,8 @@ import org.junit.Test
 import pl.grupa06.unidzieci.logika.Dostepnosc
 import pl.grupa06.unidzieci.logika.czasZajec
 import pl.grupa06.unidzieci.logika.dostepnosc
+import pl.grupa06.unidzieci.logika.godzinyTygodnia
+import pl.grupa06.unidzieci.logika.opisDostepnosci
 import pl.grupa06.unidzieci.logika.posortujMiejsca
 import pl.grupa06.unidzieci.logika.zajeciaDoCzekania
 import pl.grupa06.unidzieci.model.GodzinyOtwarcia
@@ -31,8 +33,8 @@ class WMiedzyczasieLogikaTest {
     )
 
     private fun m(id: String, pnPt: GodzinyOtwarcia?, sobota: GodzinyOtwarcia?) = MiejsceDlaRodzica(
-        id, id, RodzajMiejsca.JEDZENIE, "", "", "", Pinezka(0.0, 0.0), null, null, null,
-        godzinyPnPt = pnPt, godzinySobota = sobota, godzinyNiedziela = null,
+        id, id, RodzajMiejsca.JEDZENIE, "", "", Pinezka(0.0, 0.0), null, null, null,
+        godzinyPnPt = pnPt, godzinySobota = sobota, godzinyNiedziela = sobota,
     )
 
     private val wyklad = w("wyklad", sobota, t(10), t(11), grupaII = t(12))
@@ -56,14 +58,26 @@ class WMiedzyczasieLogikaTest {
     }
 
     @Test
-    fun dostepnosc_bezGodzinyZamkniecia() {
-        val od1130 = GodzinyOtwarcia(t(11, 30), null)
-        val branch = m("branch", od1130, od1130)
-        assertEquals(Dostepnosc.NIEZNANE, dostepnosc(branch, warsztat))
+    fun opisDostepnosci_mowiKiedyOtwieraLubZamyka() {
+        val bistro = m("bistro", GodzinyOtwarcia(t(8), t(17)), GodzinyOtwarcia(t(9), t(16)))
+        assertEquals("Otwarte w czasie zajęć", opisDostepnosci(bistro, wyklad))
+        assertEquals("Zamyka się o 17:00, jeszcze w trakcie zajęć", opisDostepnosci(bistro, warsztat))
+
+        val branch = m("branch", GodzinyOtwarcia(t(11, 30), t(16)), GodzinyOtwarcia(t(11, 30), t(16)))
         // wykład 10:00-13:00 zaczyna się przed otwarciem
-        assertEquals(Dostepnosc.CZESCIOWO, dostepnosc(branch, wyklad))
-        val ranoWarsztat = w("rano", sroda, t(9), t(10))
-        assertEquals(Dostepnosc.ZAMKNIETE, dostepnosc(branch, ranoWarsztat))
+        assertEquals("Otwiera się o 11:30, już w trakcie zajęć", opisDostepnosci(branch, wyklad))
+        assertEquals("Zamknięte w czasie zajęć", opisDostepnosci(branch, warsztat))
+    }
+
+    @Test
+    fun godzinyTygodnia_laczyTakieSameDni() {
+        val g = GodzinyOtwarcia(t(10), t(21))
+        assertEquals("codziennie 10:00-21:00", godzinyTygodnia(m("a", g, g)))
+        assertEquals(
+            "pn-pt 8:00-17:00 · sob-nd 9:00-16:00",
+            godzinyTygodnia(m("b", GodzinyOtwarcia(t(8), t(17)), GodzinyOtwarcia(t(9), t(16)))),
+        )
+        assertEquals("pn-pt 8:00-17:00 · sob-nd zamknięte", godzinyTygodnia(m("c", GodzinyOtwarcia(t(8), t(17)), null)))
     }
 
     @Test

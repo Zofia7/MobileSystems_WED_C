@@ -50,8 +50,8 @@ import pl.grupa06.unidzieci.logika.Dostepnosc
 import pl.grupa06.unidzieci.logika.czasZajec
 import pl.grupa06.unidzieci.logika.dataDluga
 import pl.grupa06.unidzieci.logika.dostepnosc
-import pl.grupa06.unidzieci.logika.godzinyWDniu
-import pl.grupa06.unidzieci.logika.opisGodzin
+import pl.grupa06.unidzieci.logika.godzinyTygodnia
+import pl.grupa06.unidzieci.logika.opisDostepnosci
 import pl.grupa06.unidzieci.logika.posortujMiejsca
 import pl.grupa06.unidzieci.logika.przedzialGodzin
 import pl.grupa06.unidzieci.logika.zajeciaDoCzekania
@@ -160,14 +160,26 @@ private fun KartaMiejsca(m: MiejsceDlaRodzica, zajecia: Wydarzenie?) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(m.nazwa, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
                     Text(
-                        "${m.rodzaj.etykieta} · ${m.dojscie}",
+                        m.rodzaj.etykieta,
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
             if (zajecia != null) {
-                ZnacznikDostepnosci(dostepnosc(m, zajecia), opisGodzin(godzinyWDniu(m, zajecia.data)))
+                ZnacznikDostepnosci(dostepnosc(m, zajecia), opisDostepnosci(m, zajecia))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.Schedule, contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    godzinyTygodnia(m),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             Text(m.opis, style = MaterialTheme.typography.bodyMedium)
             m.ceny?.let {
@@ -210,18 +222,17 @@ private fun KartaMiejsca(m: MiejsceDlaRodzica, zajecia: Wydarzenie?) {
 
 // ikona + tekst, żeby informacja nie zależała tylko od koloru
 @Composable
-private fun ZnacznikDostepnosci(d: Dostepnosc, godzinyDnia: String) {
+private fun ZnacznikDostepnosci(d: Dostepnosc, tekst: String) {
     val (ikona, kolor) = when (d) {
         Dostepnosc.OTWARTE -> Icons.Filled.CheckCircle to MaterialTheme.colorScheme.primary
-        Dostepnosc.NIEZNANE -> Icons.Outlined.Info to MaterialTheme.colorScheme.onSurfaceVariant
-        Dostepnosc.CZESCIOWO -> Icons.Outlined.Schedule to MaterialTheme.colorScheme.onSurfaceVariant
+        Dostepnosc.CZESCIOWO -> Icons.Outlined.Info to MaterialTheme.colorScheme.onSurfaceVariant
         Dostepnosc.ZAMKNIETE -> Icons.Outlined.Block to MaterialTheme.colorScheme.error
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(ikona, contentDescription = null, tint = kolor, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(6.dp))
         Text(
-            "${d.etykieta} (tego dnia: $godzinyDnia)",
+            tekst,
             style = MaterialTheme.typography.labelLarge,
             color = kolor,
         )
