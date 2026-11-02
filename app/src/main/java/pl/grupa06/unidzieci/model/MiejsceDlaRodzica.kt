@@ -1,5 +1,6 @@
 package pl.grupa06.unidzieci.model
 
+import androidx.annotation.DrawableRes
 import java.time.LocalTime
 
 enum class RodzajMiejsca(val etykieta: String) {
@@ -24,4 +25,6 @@ data class MiejsceDlaRodzica(
     val godzinyPnPt: GodzinyOtwarcia?,
     val godzinySobota: GodzinyOtwarcia?,
     val godzinyNiedziela: GodzinyOtwarcia?,
+    @DrawableRes val zdjecie: Int? = null,
+    val podpisZdjecia: String? = null, // autor i licencja (Wikimedia Commons)
 )

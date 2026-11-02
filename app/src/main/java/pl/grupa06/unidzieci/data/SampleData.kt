@@ -1,5 +1,6 @@
 package pl.grupa06.unidzieci.data
 
+import pl.grupa06.unidzieci.R
 import pl.grupa06.unidzieci.model.GodzinyOtwarcia
 import pl.grupa06.unidzieci.model.KategoriaMiejsca
 import pl.grupa06.unidzieci.model.Miejsce
@@ -141,31 +142,49 @@ object SampleData {
 
     private fun godz(od: Int, doGodziny: Int) = GodzinyOtwarcia(LocalTime.of(od, 0), LocalTime.of(doGodziny, 0))
 
-    // zakładka "W międzyczasie": adresy, telefony, godziny i ceny ze stron miejsc (listopad 2026)
-    private val BRANCH = GodzinyOtwarcia(LocalTime.of(11, 30), LocalTime.of(16, 0))
+    // zakładka "W międzyczasie": adresy, telefony, godziny i ceny ze stron miejsc (listopad 2026),
+    // zdjęcia z Wikimedia Commons (wolne licencje, autor w podpisie)
+    private fun branch(
+        id: String, punkt: String, opis: String, adres: String, pinezka: Pinezka, telefon: String,
+        zdjecie: Int? = null, podpis: String? = null,
+    ) =
+        MiejsceDlaRodzica(
+            id, "Branch Bistro - $punkt", RodzajMiejsca.JEDZENIE, opis, adres, pinezka,
+            telefon, "https://www.facebook.com/branch.bistro/", null,
+            godzinyPnPt = GodzinyOtwarcia(LocalTime.of(11, 30), LocalTime.of(16, 0)),
+            godzinySobota = null, godzinyNiedziela = null,
+            zdjecie = zdjecie, podpisZdjecia = podpis,
+        )
 
     val miejscaDlaRodzicow: List<MiejsceDlaRodzica> = listOf(
         MiejsceDlaRodzica(
             "lodex", "Restauracja & Bar Politechnika", RodzajMiejsca.JEDZENIE,
-            "Restauracja i kawiarnia w budynku Lodex (B9). Śniadania, zestawy lunchowe (12:00-17:00), kawa i desery.",
+            "Restauracja w budynku Lodex (B9). Śniadania, kawa i desery od rana, obiady 12:00-17:00. " +
+                "W soboty otwarta tylko w wybrane dni, warto zadzwonić.",
             "al. Politechniki 8 (budynek B9)", Pinezka(51.74723, 19.45386),
-            "426312684", "https://www.restauracjapolitechnika.pl/pl", "Sałatki i bowle 20-25 zł",
-            godzinyPnPt = godz(8, 17), godzinySobota = godz(9, 16), godzinyNiedziela = godz(9, 16),
+            "426312684", "https://www.restauracjapolitechnika.pl/pl", "Obiady od ok. 23 zł, sałatki 20-24 zł",
+            godzinyPnPt = godz(8, 17), godzinySobota = godz(9, 16), godzinyNiedziela = null,
+            zdjecie = R.drawable.zdjecie_lodex, podpisZdjecia = "Fot. mckdnk, CC BY-SA 4.0",
         ),
-        MiejsceDlaRodzica(
-            "branch", "Branch Bistro", RodzajMiejsca.JEDZENIE,
-            "Bistro w budynku Wydziału Organizacji i Zarządzania. Zupy, lunch i kawa.",
-            "ul. Wólczańska 221 (budynek B17)", Pinezka(51.74605, 19.45478),
-            "668809474", "https://www.facebook.com/branch.bistro/", null,
-            godzinyPnPt = BRANCH, godzinySobota = BRANCH, godzinyNiedziela = BRANCH,
-        ),
+        // Branch Bistro ma kilka punktów - rodzic wybiera najbliższy budynek
+        branch("branch-b17", "Organizacja i Zarządzanie (B17)",
+            "Bistro w budynku Wydziału Organizacji i Zarządzania (B17).",
+            "ul. Wólczańska 221 (budynek B17)", Pinezka(51.74605, 19.45478), "668809474"),
+        branch("branch-a34", "Alchemium (A34)",
+            "Bistro w budynku Wydziału Chemicznego Alchemium (A34).",
+            "ul. Żeromskiego 114 (budynek A34)", Pinezka(51.75453, 19.44964), "668809475",
+            R.drawable.zdjecie_chemia, "Fot. Chrumps, CC BY-SA 4.0"),
+        branch("branch-a3", "Biotechnologia (A3)",
+            "Bistro w budynku Wydziału Biotechnologii i Nauk o Żywności (A3).",
+            "ul. Wólczańska 171/173 (budynek A3)", Pinezka(51.75453, 19.45408), "534869966",
+            R.drawable.zdjecie_biotechnologia, "Fot. Zorro2212, CC BY-SA 3.0"),
         MiejsceDlaRodzica(
             "hopalupa", "Hopa Lupa", RodzajMiejsca.ROZRYWKA,
-            "Rodzinne centrum rozrywki: trampoliny, gokarty, VR i strefa dla maluchów, do tego kawiarnia i restauracja. " +
-                "Dobre miejsce, jeśli czekasz z młodszym rodzeństwem.",
+            "Rodzinne centrum rozrywki: trampoliny, gokarty, VR i strefa dla maluchów, do tego kawiarnia i restauracja.",
             "al. Politechniki 1 (CH Nowa Sukcesja)", Pinezka(51.74964, 19.44858),
             "888880468", "https://hopalupa.fun/", "Wstęp wolny. Trampoliny 1 h: 49 zł (pn-pt), 69 zł (weekend)",
             godzinyPnPt = godz(10, 21), godzinySobota = godz(10, 21), godzinyNiedziela = godz(10, 21),
+            zdjecie = R.drawable.zdjecie_nowa_sukcesja, podpisZdjecia = "CH Nowa Sukcesja. Fot. WrS.tm.pl, domena publiczna",
         ),
     )
 }
