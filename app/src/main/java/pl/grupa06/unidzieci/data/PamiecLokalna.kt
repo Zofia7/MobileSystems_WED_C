@@ -5,8 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
-// Zapisuje na telefonie: przy których zajęciach ustawiono przypomnienie
-// i które zajęcia już dodano do kalendarza. Przetrwa zamknięcie aplikacji.
+// Zapisuje na telefonie: przy których zajęciach ustawiono przypomnienie,
+// które zajęcia już dodano do kalendarza i na które zajęcia zapisana jest
+// zalogowana osoba (osobno dla każdego konta). Przetrwa zamknięcie aplikacji.
 class PamiecLokalna(context: Context) {
 
     private val prefs = context.getSharedPreferences("unidzieci", Context.MODE_PRIVATE)
@@ -18,6 +19,12 @@ class PamiecLokalna(context: Context) {
     var dodaneDoKalendarza by mutableStateOf(odczytaj(KLUCZ_KALENDARZ))
         private set
 
+    // zapisy aktualnie zalogowanej osoby, puste dla gościa
+    var zapisane by mutableStateOf(emptySet<String>())
+        private set
+
+    private var kontoZapisow: String? = null
+
     fun przelaczPrzypomnienie(id: String) {
         przypomnienia = if (id in przypomnienia) przypomnienia - id else przypomnienia + id
         prefs.edit().putStringSet(KLUCZ_PRZYPOMNIENIA, przypomnienia).apply()
@@ -28,9 +35,25 @@ class PamiecLokalna(context: Context) {
         prefs.edit().putStringSet(KLUCZ_KALENDARZ, dodaneDoKalendarza).apply()
     }
 
+    // wywoływane po zalogowaniu / wylogowaniu
+    fun wczytajZapisy(email: String?) {
+        kontoZapisow = email
+        zapisane = if (email == null) emptySet() else odczytaj(kluczZapisow(email))
+    }
+
+    fun ustawZapis(id: String, zapisany: Boolean) {
+        val email = kontoZapisow ?: return
+        zapisane = if (zapisany) zapisane + id else zapisane - id
+        prefs.edit().putStringSet(kluczZapisow(email), zapisane).apply()
+    }
+
+    fun przelaczZapis(id: String) = ustawZapis(id, id !in zapisane)
+
     // getStringSet zwraca zbiór, którego nie wolno zmieniać, więc robimy kopię
     private fun odczytaj(klucz: String): Set<String> =
         prefs.getStringSet(klucz, emptySet())?.toSet() ?: emptySet()
+
+    private fun kluczZapisow(email: String) = "zapisy_$email"
 
     private companion object {
         const val KLUCZ_PRZYPOMNIENIA = "przypomnienia"

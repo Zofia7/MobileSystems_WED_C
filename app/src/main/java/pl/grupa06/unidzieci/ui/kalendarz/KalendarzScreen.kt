@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,12 +28,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.Login
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +49,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -52,6 +60,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,6 +96,7 @@ import pl.grupa06.unidzieci.data.kalendarzeDoZapisu
 import pl.grupa06.unidzieci.logika.chipyDnia
 import pl.grupa06.unidzieci.logika.dataDluga
 import pl.grupa06.unidzieci.logika.domyslnieWybranyDzien
+import pl.grupa06.unidzieci.logika.filtrujZajecia
 import pl.grupa06.unidzieci.logika.godzina
 import pl.grupa06.unidzieci.logika.grupujPoDniach
 import pl.grupa06.unidzieci.logika.najblizszyDzienZZajeciami
@@ -109,11 +119,20 @@ fun KalendarzScreen(
     dodaneDoKalendarza: Set<String>,
     onDodanoDoKalendarza: (List<String>) -> Unit,
     onWydarzenieClick: (String) -> Unit,
+    zalogowany: String?, // e-mail albo null dla gościa
+    zapisane: Set<String>,
+    onZaloguj: () -> Unit,
+    onWyloguj: () -> Unit,
+    onMojeZajecia: () -> Unit,
 ) {
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     val dzis = remember { LocalDate.now() }
-    val poDniach = remember(wydarzenia) { grupujPoDniach(wydarzenia) }
+    // "Moje" działa tylko po zalogowaniu; wybór zostaje, więc po zalogowaniu od razu widać swoje zajęcia
+    var tylkoMoje by rememberSaveable { mutableStateOf(false) }
+    val widokMoje = tylkoMoje && zalogowany != null
+    val widoczne = remember(wydarzenia, widokMoje, zapisane) { filtrujZajecia(wydarzenia, widokMoje, zapisane) }
+    val poDniach = remember(widoczne) { grupujPoDniach(widoczne) }
     var wybranyDzien by rememberSaveable { mutableStateOf(domyslnieWybranyDzien(wydarzenia, dzis)) }
 
     val stan = rememberCalendarState(
@@ -133,6 +152,15 @@ fun KalendarzScreen(
 
     fun komunikat(tekst: String) {
         scope.launch { snackbar.showSnackbar(tekst) }
+    }
+
+    // komunikat tylko przy zmianie konta, nie przy każdym wejściu na ekran
+    var poprzednieKonto by rememberSaveable { mutableStateOf(zalogowany) }
+    LaunchedEffect(zalogowany) {
+        if (zalogowany != poprzednieKonto) {
+            komunikat(if (zalogowany != null) "Zalogowano jako $zalogowany" else "Wylogowano")
+            poprzednieKonto = zalogowany
+        }
     }
 
     // import całego kalendarza: najpierw uprawnienia, potem wybór kalendarza w oknie
@@ -179,7 +207,6 @@ fun KalendarzScreen(
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0),
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
@@ -199,9 +226,46 @@ fun KalendarzScreen(
                     }) { Icon(Icons.Filled.ChevronRight, contentDescription = "Następny miesiąc") }
                     Box {
                         IconButton(onClick = { menuOtwarte = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "Więcej opcji")
+                            Icon(
+                                if (zalogowany != null) Icons.Filled.AccountCircle else Icons.Outlined.AccountCircle,
+                                contentDescription = "Konto i opcje",
+                            )
                         }
                         DropdownMenu(expanded = menuOtwarte, onDismissRequest = { menuOtwarte = false }) {
+                            Text(
+                                zalogowany ?: "Nie zalogowano",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                            if (zalogowany == null) {
+                                DropdownMenuItem(
+                                    text = { Text("Zaloguj się") },
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Login, contentDescription = null) },
+                                    onClick = {
+                                        menuOtwarte = false
+                                        onZaloguj()
+                                    },
+                                )
+                            } else {
+                                DropdownMenuItem(
+                                    text = { Text("Moje zajęcia") },
+                                    leadingIcon = { Icon(Icons.Outlined.Checklist, contentDescription = null) },
+                                    onClick = {
+                                        menuOtwarte = false
+                                        onMojeZajecia()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Wyloguj się") },
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = null) },
+                                    onClick = {
+                                        menuOtwarte = false
+                                        onWyloguj()
+                                    },
+                                )
+                            }
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text("Dodaj wszystkie zajęcia do kalendarza") },
                                 leadingIcon = { Icon(Icons.Outlined.EditCalendar, contentDescription = null) },
@@ -218,6 +282,15 @@ fun KalendarzScreen(
         },
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding)) {
+            item {
+                FiltrZajec(
+                    tylkoMoje = widokMoje,
+                    onWybierz = { moje ->
+                        tylkoMoje = moje
+                        if (moje && zalogowany == null) onZaloguj()
+                    },
+                )
+            }
             item { NaglowekDniTygodnia() }
             item {
                 HorizontalCalendar(
@@ -247,20 +320,59 @@ fun KalendarzScreen(
             }
 
             val listaDnia = poDniach[wybranyDzien].orEmpty()
-            if (listaDnia.isEmpty()) {
+            if (widokMoje && zapisane.isEmpty()) {
+                item { BrakMoichZajec(onMojeZajecia) }
+            } else if (listaDnia.isEmpty()) {
                 item {
                     BrakZajec(
-                        nastepny = najblizszyDzienZZajeciami(wydarzenia, wybranyDzien.plusDays(1)),
+                        nastepny = najblizszyDzienZZajeciami(widoczne, wybranyDzien.plusDays(1)),
                         onPokaz = ::pokazDzien,
                     )
                 }
             } else {
                 items(listaDnia, key = { it.id }) { w ->
-                    WierszWydarzenia(w, przypomnienie = w.id in przypomnienia, onClick = { onWydarzenieClick(w.id) })
+                    WierszWydarzenia(
+                        w,
+                        przypomnienie = w.id in przypomnienia,
+                        // w widoku "Moje" wszystkie są zapisane, więc znaczek tylko w "Wszystkie"
+                        zapisany = !widokMoje && w.id in zapisane,
+                        onClick = { onWydarzenieClick(w.id) },
+                    )
                 }
             }
             item { Spacer(Modifier.height(16.dp)) }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FiltrZajec(tylkoMoje: Boolean, onWybierz: (Boolean) -> Unit) {
+    SingleChoiceSegmentedButtonRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        listOf("Wszystkie zajęcia", "Moje zajęcia").forEachIndexed { i, etykieta ->
+            SegmentedButton(
+                selected = tylkoMoje == (i == 1),
+                onClick = { onWybierz(i == 1) },
+                shape = SegmentedButtonDefaults.itemShape(index = i, count = 2),
+            ) { Text(etykieta) }
+        }
+    }
+}
+
+@Composable
+private fun BrakMoichZajec(onMojeZajecia: () -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            "Nie zaznaczono jeszcze zajęć, na które jest zapisane dziecko.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(12.dp))
+        Button(onClick = onMojeZajecia) { Text("Wybierz moje zajęcia") }
     }
 }
 
@@ -393,7 +505,7 @@ private fun ChipWydarzenia(w: Wydarzenie, bezTekstu: Boolean, przygaszony: Boole
 }
 
 @Composable
-private fun WierszWydarzenia(w: Wydarzenie, przypomnienie: Boolean, onClick: () -> Unit) {
+private fun WierszWydarzenia(w: Wydarzenie, przypomnienie: Boolean, zapisany: Boolean, onClick: () -> Unit) {
     val kolor = kolorTypu(w.typ)
     Surface(
         onClick = onClick,
@@ -438,6 +550,17 @@ private fun WierszWydarzenia(w: Wydarzenie, przypomnienie: Boolean, onClick: () 
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            if (zapisany) {
+                Icon(
+                    Icons.Filled.CheckCircle,
+                    contentDescription = "Jestem zapisany/a",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .padding(end = 4.dp)
+                        .size(20.dp),
+                )
             }
             if (przypomnienie) {
                 Icon(

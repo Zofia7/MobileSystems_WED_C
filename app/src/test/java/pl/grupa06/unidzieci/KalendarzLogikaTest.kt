@@ -5,11 +5,13 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import pl.grupa06.unidzieci.logika.Grupa
 import pl.grupa06.unidzieci.logika.StatusZapisow
-import pl.grupa06.unidzieci.logika.budynkiZajec
+import pl.grupa06.unidzieci.logika.bladRejestracji
 import pl.grupa06.unidzieci.logika.chipyDnia
 import pl.grupa06.unidzieci.logika.dataDluga
 import pl.grupa06.unidzieci.logika.doImportu
 import pl.grupa06.unidzieci.logika.domyslnieWybranyDzien
+import pl.grupa06.unidzieci.logika.filtrujZajecia
+import pl.grupa06.unidzieci.logika.miejscaDlaBudynku
 import pl.grupa06.unidzieci.logika.godzinaZbiorki
 import pl.grupa06.unidzieci.logika.godzinyGrupy
 import pl.grupa06.unidzieci.logika.grupujPoDniach
@@ -17,6 +19,8 @@ import pl.grupa06.unidzieci.logika.liczbaZajec
 import pl.grupa06.unidzieci.logika.najblizszyDzienZZajeciami
 import pl.grupa06.unidzieci.logika.opisDniaDlaCzytnika
 import pl.grupa06.unidzieci.logika.statusZapisow
+import pl.grupa06.unidzieci.model.KategoriaMiejsca
+import pl.grupa06.unidzieci.model.Miejsce
 import pl.grupa06.unidzieci.model.TypWydarzenia
 import pl.grupa06.unidzieci.model.Wydarzenie
 import java.time.LocalDate
@@ -125,15 +129,31 @@ class KalendarzLogikaTest {
     }
 
     @Test
-    fun budynki_najpierwNajblizszeZajecia_bezPowtorzen() {
-        val dzis = LocalDate.of(2026, 10, 19)
-        val lista = listOf(
-            w("stare", LocalDate.of(2026, 10, 1), budynek = "Stary"),
-            w("b", sob31, budynek = "B9"),
-            w("a", sob24, budynek = "EEIA"),
-            w("c", LocalDate.of(2026, 11, 7), budynek = "B9"),
-        )
-        assertEquals(listOf("EEIA", "B9", "Stary"), budynkiZajec(lista, dzis).map { it.budynek })
+    fun filtr_mojeZajecia_tylkoZapisane() {
+        val lista = listOf(w("a", sob24), w("b", sob24), w("c", sob31))
+        assertEquals(listOf("a", "b", "c"), filtrujZajecia(lista, tylkoMoje = false, zapisane = setOf("b")).map { it.id })
+        assertEquals(listOf("b"), filtrujZajecia(lista, tylkoMoje = true, zapisane = setOf("b")).map { it.id })
+        assertEquals(emptyList<Wydarzenie>(), filtrujZajecia(lista, tylkoMoje = true, zapisane = emptySet()))
+    }
+
+    private fun m(id: String, budynek: String?) = Miejsce(
+        id, KategoriaMiejsca.PARKING, "M $id", "", null, budynek, null, null, potwierdzone = true,
+    )
+
+    @Test
+    fun miejsca_najpierwBudynku_potemWspolne() {
+        val miejsca = listOf(m("wspolne", null), m("b9", "B9"), m("eeia", "EEIA"))
+        assertEquals(listOf("b9", "wspolne"), miejscaDlaBudynku(miejsca, "B9").map { it.id })
+        assertEquals(listOf("wspolne"), miejscaDlaBudynku(miejsca, "Inny").map { it.id })
+    }
+
+    @Test
+    fun rejestracja_walidacja() {
+        assertEquals("Podaj poprawny adres e-mail", bladRejestracji("rodzic", "haslo123", "haslo123"))
+        assertEquals("Podaj poprawny adres e-mail", bladRejestracji("a@b", "haslo123", "haslo123"))
+        assertEquals("Hasło musi mieć co najmniej 6 znaków", bladRejestracji("a@b.pl", "123", "123"))
+        assertEquals("Hasła nie są takie same", bladRejestracji("a@b.pl", "haslo123", "haslo124"))
+        assertNull(bladRejestracji(" rodzic@test.pl ", "haslo123", "haslo123"))
     }
 
     @Test

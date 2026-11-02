@@ -1,5 +1,6 @@
 package pl.grupa06.unidzieci.logika
 
+import pl.grupa06.unidzieci.model.Miejsce
 import pl.grupa06.unidzieci.model.TypWydarzenia
 import pl.grupa06.unidzieci.model.Wydarzenie
 import java.time.Duration
@@ -15,10 +16,6 @@ fun najblizszyDzienZZajeciami(wydarzenia: List<Wydarzenie>, dzis: LocalDate): Lo
 
 fun domyslnieWybranyDzien(wydarzenia: List<Wydarzenie>, dzis: LocalDate): LocalDate =
     najblizszyDzienZZajeciami(wydarzenia, dzis) ?: dzis
-
-fun najblizszeWydarzenie(wydarzenia: List<Wydarzenie>, dzis: LocalDate): Wydarzenie? =
-    wydarzenia.filter { !it.data.isBefore(dzis) }
-        .minWithOrNull(compareBy({ it.data }, { it.start }))
 
 // w komórce dnia mieszczą się 2 chipy, reszta jako "+N"
 data class ChipyDnia(val widoczne: List<Wydarzenie>, val ukryte: Int) {
@@ -77,14 +74,13 @@ fun godzinyGrupy(w: Wydarzenie, grupa: Grupa): Pair<LocalTime, LocalTime> {
     return start to start.plus(czas)
 }
 
-data class Lokalizacja(val budynek: String, val adres: String)
+// widok "Moje" w kalendarzu - tylko zajęcia, na które zalogowana osoba jest zapisana
+fun filtrujZajecia(wydarzenia: List<Wydarzenie>, tylkoMoje: Boolean, zapisane: Set<String>): List<Wydarzenie> =
+    if (tylkoMoje) wydarzenia.filter { it.id in zapisane } else wydarzenia
 
-// budynki, w których są zajęcia - najpierw te z najbliższymi zajęciami
-fun budynkiZajec(wydarzenia: List<Wydarzenie>, dzis: LocalDate): List<Lokalizacja> {
-    val (przyszle, przeszle) = wydarzenia.sortedWith(compareBy({ it.data }, { it.start }))
-        .partition { !it.data.isBefore(dzis) }
-    return (przyszle + przeszle).map { Lokalizacja(it.budynek, it.adres) }.distinct()
-}
+// parking, szatnia itd. przy budynku zajęć, a na końcu informacje wspólne (np. biuro ŁUD)
+fun miejscaDlaBudynku(miejsca: List<Miejsce>, budynek: String): List<Miejsce> =
+    miejsca.filter { it.budynek == budynek } + miejsca.filter { it.budynek == null }
 
 // które zajęcia dodać do kalendarza w telefonie (bez minionych i bez już dodanych)
 fun doImportu(
