@@ -143,7 +143,7 @@ object SampleData {
     private fun godz(od: Int, doGodziny: Int) = GodzinyOtwarcia(LocalTime.of(od, 0), LocalTime.of(doGodziny, 0))
 
     // zakładka "W międzyczasie": adresy, telefony, godziny i ceny ze stron miejsc (listopad 2026),
-    // zdjęcia z Wikimedia Commons (wolne licencje, autor w podpisie)
+    // zdjęcia: dostarczone przez zespół, a te z Wikimedia Commons z podpisem autora (wolne licencje)
     private fun branch(
         id: String, punkt: String, opis: String, adres: String, pinezka: Pinezka, telefon: String,
         zdjecie: Int? = null, podpis: String? = null,
@@ -164,12 +164,13 @@ object SampleData {
             "al. Politechniki 8 (budynek B9)", Pinezka(51.74723, 19.45386),
             "426312684", "https://www.restauracjapolitechnika.pl/pl", "Obiady od ok. 23 zł, sałatki 20-24 zł",
             godzinyPnPt = godz(8, 17), godzinySobota = godz(9, 16), godzinyNiedziela = null,
-            zdjecie = R.drawable.zdjecie_lodex, podpisZdjecia = "Fot. mckdnk, CC BY-SA 4.0",
+            zdjecie = R.drawable.restauracja_lodex,
         ),
         // Branch Bistro ma kilka punktów - rodzic wybiera najbliższy budynek
         branch("branch-b17", "Organizacja i Zarządzanie (B17)",
             "Bistro w budynku Wydziału Organizacji i Zarządzania (B17).",
-            "ul. Wólczańska 221 (budynek B17)", Pinezka(51.74605, 19.45478), "668809474"),
+            "ul. Wólczańska 221 (budynek B17)", Pinezka(51.74605, 19.45478), "668809474",
+            R.drawable.branch_b17),
         branch("branch-a34", "Alchemium (A34)",
             "Bistro w budynku Wydziału Chemicznego Alchemium (A34).",
             "ul. Żeromskiego 114 (budynek A34)", Pinezka(51.75453, 19.44964), "668809475",
@@ -177,7 +178,7 @@ object SampleData {
         branch("branch-a3", "Biotechnologia (A3)",
             "Bistro w budynku Wydziału Biotechnologii i Nauk o Żywności (A3).",
             "ul. Wólczańska 171/173 (budynek A3)", Pinezka(51.75453, 19.45408), "534869966",
-            R.drawable.zdjecie_biotechnologia, "Fot. Zorro2212, CC BY-SA 3.0"),
+            R.drawable.branch_a3),
         MiejsceDlaRodzica(
             "hopalupa", "Hopa Lupa", RodzajMiejsca.ROZRYWKA,
             "Rodzinne centrum rozrywki: trampoliny, gokarty, VR i strefa dla maluchów, do tego kawiarnia i restauracja.",
