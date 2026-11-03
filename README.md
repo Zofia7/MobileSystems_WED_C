@@ -10,3 +10,7 @@ Maksymilian Kaczmarek 257279
 App helping parents and staff at Niepubliczne Przedszkole Politechniki Łódzkiej.  
 or  
 App helping in the reservation process for promotion stands on Politechnika campuses for student organisations and other companies:)
+
+# Chosen idea
+An App for the parents of children enrolled in the Łódzki Uniwersytet Dziecięcy. 
+Solving the problems with calendar confusion, campus navigation and boredom during the childs lectures. Featuring the a calendar layout, detailed event data and an amenities tab.
