@@ -34,11 +34,15 @@ import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
+import com.kizitonwose.calendar.core.OutDateStyle
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 private val SKROTY_DNI = listOf("Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd")
 
 @Composable
@@ -48,11 +52,23 @@ fun KalendarzScreen(wydarzenia: List<Wydarzenie>) {
     var wybranyDzien by remember { mutableStateOf(domyslnieWybranyDzien(wydarzenia, dzis)) }
     val scope = rememberCoroutineScope()
 
+    val poczatkowyMiesiac = YearMonth.from(wybranyDzien)
+    val startM = YearMonth.now().minusMonths(12)
+    val endM = YearMonth.now().plusMonths(12)
+
+// Zabezpieczamy, by miesiąc startowy zawsze mieścił się w bezpiecznym zakresie
+    val bezpiecznyMiesiac = when {
+        poczatkowyMiesiac.isBefore(startM) -> startM
+        poczatkowyMiesiac.isAfter(endM) -> endM
+        else -> poczatkowyMiesiac
+    }
+
     val stan = rememberCalendarState(
-        startMonth = YearMonth.now().minusMonths(12),
-        endMonth = YearMonth.now().plusMonths(12),
-        firstVisibleMonth = YearMonth.from(wybranyDzien),
+        startMonth = startM,
+        endMonth = endM,
+        firstVisibleMonth = bezpiecznyMiesiac,
         firstDayOfWeek = DayOfWeek.MONDAY,
+        outDateStyle = OutDateStyle.EndOfGrid
     )
     val widocznyMiesiac = stan.firstVisibleMonth.yearMonth
 
@@ -73,10 +89,17 @@ fun KalendarzScreen(wydarzenia: List<Wydarzenie>) {
                     scope.launch { stan.animateScrollToMonth(YearMonth.from(dzis)) }
                 }) { Text("Dziś") }
                 TextButton(onClick = {
-                    scope.launch { stan.animateScrollToMonth(widocznyMiesiac.minusMonths(1)) }
+                    val poprzedni = widocznyMiesiac.minusMonths(1)
+                    if (!poprzedni.isBefore(stan.startMonth)) {
+                        scope.launch { stan.animateScrollToMonth(poprzedni) }
+                    }
                 }) { Text("‹") }
+
                 TextButton(onClick = {
-                    scope.launch { stan.animateScrollToMonth(widocznyMiesiac.plusMonths(1)) }
+                    val nastepny = widocznyMiesiac.plusMonths(1)
+                    if (!nastepny.isAfter(stan.endMonth)) {
+                        scope.launch { stan.animateScrollToMonth(nastepny) }
+                    }
                 }) { Text("›") }
             }
         }
@@ -231,25 +254,29 @@ private fun ChipWydarzenia(w: Wydarzenie, przygaszony: Boolean) {
 
 @Composable
 private fun WierszWydarzenia(w: Wydarzenie) {
+    val kolorPaska = kolorTypu(w.typ)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
-        // pionowy pasek w kolorze typu
-        Box(
+        Column(
             modifier = Modifier
-                .width(4.dp)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(2.dp))
-                .background(kolorTypu(w.typ)),
-        )
-        Column(modifier = Modifier.padding(start = 12.dp)) {
+                .drawBehind {
+                    drawRoundRect(
+                        color = kolorPaska,
+                        topLeft = Offset(0f, 0f),
+                        size = Size(4.dp.toPx(), size.height),
+                        cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
+                    )
+                }
+                .padding(start = 16.dp) // Zastępuje szerokość Boxa (4dp) i dawny padding (12dp)
+        ) {
             Text(
                 text = w.typ.etykieta.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
-                color = kolorTypu(w.typ),
+                color = kolorPaska,
             )
             Text(w.tytul, style = MaterialTheme.typography.titleMedium)
             Text(
