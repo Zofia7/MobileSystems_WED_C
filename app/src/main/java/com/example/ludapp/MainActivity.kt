@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.ludapp.data.SampleData
+import com.example.ludapp.ui.kalendarz.KalendarzScreen
 import com.example.ludapp.ui.theme.LUDAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -67,7 +69,7 @@ Scaffold (
         contentAlignment = Alignment.Center
     ) {
         if (selectedTabIndex == 0) {
-            Text("Tu za chwilę zbudujemy siatkę kalendarza")
+            KalendarzScreen(SampleData.wydarzenia)
         } else {
             Text("Tu będzie lista miejsc na czas wolny.")
         }
