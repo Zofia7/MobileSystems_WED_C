@@ -8,14 +8,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,16 +44,25 @@ import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+
 private val SKROTY_DNI = listOf("Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd")
 
+// 1. Rozszerzona sygnatura o zapisane wydarzenia i akcje kliknięcia
 @Composable
-fun KalendarzScreen(wydarzenia: List<Wydarzenie>) {
+fun KalendarzScreen(
+    wydarzenia: List<Wydarzenie>,
+    zapisane: Set<String>,
+    onPrzelaczZapis: (String) -> Unit,
+    onWydarzenieClick: (String) -> Unit,
+) {
     val dzis = remember { LocalDate.now() }
-    val poDniach = remember(wydarzenia) { grupujPoDniach(wydarzenia) }
+    var tylkoMoje by rememberSaveable { mutableStateOf(false) }
+
+    // 2. Filtrowanie listy przed grupowaniem po dniach (działa zarówno dla siatki, jak i listy dnia)
+    val widoczne = remember(wydarzenia, tylkoMoje, zapisane) {
+        if (tylkoMoje) wydarzenia.filter { it.id in zapisane } else wydarzenia
+    }
+    val poDniach = remember(widoczne) { grupujPoDniach(widoczne) }
     var wybranyDzien by remember { mutableStateOf(domyslnieWybranyDzien(wydarzenia, dzis)) }
     val scope = rememberCoroutineScope()
 
@@ -56,7 +70,6 @@ fun KalendarzScreen(wydarzenia: List<Wydarzenie>) {
     val startM = YearMonth.now().minusMonths(12)
     val endM = YearMonth.now().plusMonths(12)
 
-// Zabezpieczamy, by miesiąc startowy zawsze mieścił się w bezpiecznym zakresie
     val bezpiecznyMiesiac = when {
         poczatkowyMiesiac.isBefore(startM) -> startM
         poczatkowyMiesiac.isAfter(endM) -> endM
@@ -94,13 +107,31 @@ fun KalendarzScreen(wydarzenia: List<Wydarzenie>) {
                         scope.launch { stan.animateScrollToMonth(poprzedni) }
                     }
                 }) { Text("‹") }
-
                 TextButton(onClick = {
                     val nastepny = widocznyMiesiac.plusMonths(1)
                     if (!nastepny.isAfter(stan.endMonth)) {
                         scope.launch { stan.animateScrollToMonth(nastepny) }
                     }
                 }) { Text("›") }
+            }
+        }
+
+        // 3. Przełącznik All Events / My Events
+        item {
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+            ) {
+                listOf("All Events", "My Events").forEachIndexed { index, etykieta ->
+                    SegmentedButton(
+                        selected = tylkoMoje == (index == 1),
+                        onClick = { tylkoMoje = (index == 1) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
+                    ) {
+                        Text(etykieta)
+                    }
+                }
             }
         }
 
@@ -138,13 +169,21 @@ fun KalendarzScreen(wydarzenia: List<Wydarzenie>) {
         if (listaDnia.isEmpty()) {
             item {
                 Text(
-                    "Brak zajęć tego dnia",
+                    text = if (tylkoMoje && zapisane.isEmpty()) "Brak zapisanych wydarzeń w zakładkach"
+                    else "Brak zajęć tego dnia",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp),
                 )
             }
         } else {
-            items(listaDnia, key = { it.id }) { w -> WierszWydarzenia(w) }
+            items(listaDnia, key = { it.id }) { w ->
+                WierszWydarzenia(
+                    w = w,
+                    zapisany = w.id in zapisane,
+                    onPrzelaczZapis = { onPrzelaczZapis(w.id) },
+                    onClick = { onWydarzenieClick(w.id) },
+                )
+            }
         }
         item { Spacer(Modifier.height(16.dp)) }
     }
@@ -197,7 +236,6 @@ private fun KomorkaDnia(
             .clickable(enabled = wMiesiacu, onClick = onClick)
             .padding(horizontal = 2.dp, vertical = 3.dp),
     ) {
-        // numer dnia, dzisiejszy w kółku
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -252,17 +290,26 @@ private fun ChipWydarzenia(w: Wydarzenie, przygaszony: Boolean) {
     )
 }
 
+// 4. Rozszerzony wiersz wydarzenia o kliknięcie w szczegóły i przycisk Bookmark
 @Composable
-private fun WierszWydarzenia(w: Wydarzenie) {
+private fun WierszWydarzenia(
+    w: Wydarzenie,
+    zapisany: Boolean,
+    onPrzelaczZapis: () -> Unit,
+    onClick: () -> Unit,
+) {
     val kolorPaska = kolorTypu(w.typ)
 
     Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Column(
             modifier = Modifier
+                .weight(1f)
                 .drawBehind {
                     drawRoundRect(
                         color = kolorPaska,
@@ -271,7 +318,7 @@ private fun WierszWydarzenia(w: Wydarzenie) {
                         cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
                     )
                 }
-                .padding(start = 16.dp) // Zastępuje szerokość Boxa (4dp) i dawny padding (12dp)
+                .padding(start = 16.dp)
         ) {
             Text(
                 text = w.typ.etykieta.uppercase(),
@@ -280,9 +327,16 @@ private fun WierszWydarzenia(w: Wydarzenie) {
             )
             Text(w.tytul, style = MaterialTheme.typography.titleMedium)
             Text(
-                text = "${przedzialGodzin(w.start, w.koniec)} · ${w.sala}",
+                text = "${przedzialGodzin(w.start, w.koniec)} · ${w.sala}, ${w.budynek}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onPrzelaczZapis) {
+            Icon(
+                imageVector = if (zapisany) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                contentDescription = if (zapisany) "Usuń z zakładek" else "Dodaj do zakładek",
+                tint = if (zapisany) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
             )
         }
     }
